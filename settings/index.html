@@ -502,7 +502,9 @@
         checkUpdateBtn.textContent = 'Memeriksa...';
       }
       try {
-        const res = await fetch('/api/hermes/system/update/check?pin=' + encodeURIComponent(pin));
+        const res = await fetch('/api/hermes/system/update/check?pin=' + encodeURIComponent(pin), {
+          headers: { 'X-Hermes-PIN': pin }
+        });
         const data = await res.json();
         if (data.success) {
           if (data.has_update) {

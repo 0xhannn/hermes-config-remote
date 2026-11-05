@@ -39,7 +39,7 @@ def get_current_pin():
                     return saved
         except Exception:
             pass
-    return os.environ.get("HERMES_PIN_SECRET", "hermes123")
+    return os.environ.get("HERMES_PIN_SECRET", "farhanganteng")
 
 def set_current_pin(new_pin):
     os.makedirs(os.path.dirname(PIN_FILE), exist_ok=True)
