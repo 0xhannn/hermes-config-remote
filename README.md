@@ -4,30 +4,47 @@ Full-spectrum local-first web control center and system manager for **Hermes Age
 
 ## 🚀 Quick Start (NPX / NPM)
 
-No installation required, run directly anywhere:
+### 1. Instant Run via GitHub (No NPM Install Required)
+Jalankan langsung tanpa perlu install apa pun:
 
 ```bash
-npx hermes-remote
+npx github:0xhannn/hermes-config-remote
 ```
 
-Or install globally:
-
+### 2. NPM Package (Global Install)
 ```bash
 npm install -g hermes-remote
 hermes-remote
 ```
 
-### CLI Options
-
+### 3. Git Clone (Manual Setup)
 ```bash
-hermes-remote --port 8093       # Custom port
-hermes-remote --host 0.0.0.0     # Bind to specific interface
-hermes-remote --no-open          # Headless mode (don't open browser)
-hermes-remote --help             # View all options
+git clone https://github.com/0xhannn/hermes-config-remote.git
+cd hermes-config-remote
+./bin/cli.js
 ```
 
-- **Default Access PIN**: `123456` (or existing `~/.hermes/.pin_secret`).
-- **Dashboard URL**: `http://localhost:8093/hermes/`
+---
+
+### ⚙️ CLI Options & Flags
+
+```bash
+# Ganti port custom
+npx github:0xhannn/hermes-config-remote -p 8090
+
+# Jalankan di VPS / Headless (tanpa otomatis buka browser GUI)
+npx github:0xhannn/hermes-config-remote --no-open
+
+# Bind ke semua IP interface VPS
+npx github:0xhannn/hermes-config-remote --host 0.0.0.0
+
+# Bantuan lengkap
+npx github:0xhannn/hermes-config-remote --help
+```
+
+- **Default Master PIN**: `123456` *(atau PIN kustom yang tersimpan di `~/.hermes/.pin_secret`)*.
+- **Web UI URL**: `http://localhost:8093/hermes/`
+- **Prasyarat**: Node.js 16+ & Python 3.8+ (stdlib bawaan OS).
 
 ---
 
