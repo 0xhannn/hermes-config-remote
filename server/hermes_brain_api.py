@@ -25,6 +25,8 @@ import urllib.parse
 import urllib.request
 
 PORT = int(os.environ.get("HERMES_PORT", 8093))
+HERMES_WEB_DIR = os.environ.get("HERMES_WEB_DIR", "/var/www/hermes-remote")
+HERMES_REPO_BRANCH = os.environ.get("HERMES_REPO_BRANCH", "main")
 CONFIG_PATH = os.environ.get("HERMES_CONFIG_PATH", os.path.expanduser("~/.hermes/config.yaml"))
 PIN_FILE = os.path.expanduser("~/.hermes/.pin_secret")
 
