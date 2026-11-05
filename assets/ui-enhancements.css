@@ -96,12 +96,16 @@ button:active, .btn:active, .clickable:active, .model-picker-option:active {
   /* Sembunyikan kontrol pembatalan di modal mobile (prioritas back Android) */
   .modal-buttons .btn-secondary,
   .modal-actions .btn-cancel,
+  .modal-actions #modalCancelBtn,
   .modal-cancel,
-  #confirmModalCancel {
+  .modal-close-btn,
+  .btn-close-modal {
     display: none !important;
   }
   .modal-buttons .btn-primary,
+  .modal-actions .btn-primary,
   .modal-actions .btn-save,
+  #modalOkBtn,
   #confirmModalOk {
     width: 100% !important;
   }

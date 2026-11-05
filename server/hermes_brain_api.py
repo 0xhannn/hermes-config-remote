@@ -515,12 +515,12 @@ class HermesBrainHandler(http.server.BaseHTTPRequestHandler):
             try:
                 import subprocess
                 local_sha = subprocess.check_output(
-                    ["git", "-C", "/var/www/maniflow", "rev-parse", "HEAD"],
+                    ["git", "-C", HERMES_WEB_DIR, "rev-parse", "HEAD"],
                     stderr=subprocess.STDOUT
                 ).decode("utf-8").strip()
                 
                 remote_out = subprocess.check_output(
-                    ["git", "-C", "/var/www/maniflow", "ls-remote", "origin", "refs/heads/master"],
+                    ["git", "-C", HERMES_WEB_DIR, "ls-remote", "origin", f"refs/heads/{HERMES_REPO_BRANCH}"],
                     stderr=subprocess.STDOUT, timeout=10
                 ).decode("utf-8").strip()
                 remote_sha = remote_out.split()[0] if remote_out else local_sha
@@ -528,7 +528,7 @@ class HermesBrainHandler(http.server.BaseHTTPRequestHandler):
                 has_update = (local_sha != remote_sha)
                 
                 log_out = subprocess.check_output(
-                    ["git", "-C", "/var/www/maniflow", "log", "-1", "--format=%h - %s (%cr)"],
+                    ["git", "-C", HERMES_WEB_DIR, "log", "-1", "--format=%h - %s (%cr)"],
                     stderr=subprocess.STDOUT
                 ).decode("utf-8").strip()
 
@@ -545,8 +545,13 @@ class HermesBrainHandler(http.server.BaseHTTPRequestHandler):
         if path == "/api/hermes/system/update/apply":
             try:
                 import subprocess
+                # Pastikan perubahan konfigurasi/file lokal di-stash otomatis agar rebase git clean
+                subprocess.run(
+                    ["git", "-C", HERMES_WEB_DIR, "stash"],
+                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+                )
                 pull_out = subprocess.check_output(
-                    ["git", "-C", "/var/www/maniflow", "pull", "--rebase", "origin", "master"],
+                    ["git", "-C", HERMES_WEB_DIR, "pull", "--rebase", "origin", HERMES_REPO_BRANCH],
                     stderr=subprocess.STDOUT, timeout=30
                 ).decode("utf-8")
                 

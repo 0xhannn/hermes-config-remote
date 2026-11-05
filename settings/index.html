@@ -349,8 +349,7 @@
       <div class="modal-title" id="modalTitle">Konfirmasi Tindakan</div>
       <div class="modal-desc" id="modalDesc">Apakah Anda yakin ingin melanjutkan tindakan ini?</div>
       <div class="modal-actions">
-        <button id="modalCancelBtn" class="btn">Batal</button>
-        <button id="modalOkBtn" class="btn btn-primary">Lanjutkan</button>
+        <button id="modalOkBtn" class="btn btn-primary">Oke</button>
       </div>
     </div>
   </div>
@@ -387,13 +386,16 @@
       }
     }
 
-    document.getElementById('modalCancelBtn').addEventListener('click', () => {
-      if (history.state && history.state.modalOpen) {
-        history.back();
-      } else {
-        closeModal(false);
-      }
-    });
+    const cancelBtn = document.getElementById('modalCancelBtn');
+    if (cancelBtn) {
+      cancelBtn.addEventListener('click', () => {
+        if (history.state && history.state.modalOpen) {
+          history.back();
+        } else {
+          closeModal(false);
+        }
+      });
+    }
 
     document.getElementById('modalOkBtn').addEventListener('click', () => {
       if (history.state && history.state.modalOpen) {
