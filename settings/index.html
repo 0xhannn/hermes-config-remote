@@ -258,9 +258,9 @@
       </div>
 
       <div class="btn-row" style="margin-top: 8px;">
-        <button id="downloadBackupBtn" class="btn">
+        <button id="openExportModalBtn" class="btn btn-primary">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-          Download Backup
+          Export &amp; Download Bundle
         </button>
         <button id="importBackupBtn" class="btn">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
@@ -383,6 +383,66 @@
     </div>
   </div>
 
+  <!-- Modular Brain Export Modal (Checklist & Component Selection) -->
+  <div id="exportModal" class="modal-backdrop">
+    <div class="modal-box" style="max-width: 520px; max-height: 85vh; display: flex; flex-direction: column;">
+      <div class="modal-title">📦 Export Modular Brain Package</div>
+      <div class="modal-desc" style="margin-bottom: 12px;">Pilih komponen spesifik yang ingin di-package ke file arsip terkompres (.tar.gz) untuk dijual, dibagikan, atau dicadangkan:</div>
+
+      <div style="overflow-y: auto; display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; padding-right: 4px;">
+        <label style="display: flex; align-items: flex-start; gap: 10px; padding: 10px; background: var(--bg-card); border: 1px solid var(--card-border); border-radius: 8px; cursor: pointer;">
+          <input type="checkbox" id="expPersona" checked style="margin-top: 3px; accent-color: var(--accent);">
+          <div>
+            <div style="font-weight: 600; font-size: 13px;">🎭 Persona &amp; Core Prompt</div>
+            <div style="font-size: 12px; color: var(--text-muted);">SOUL.md, IDENTITY.md, USER.md, TOOLS.md (Identitas &amp; gaya agent)</div>
+          </div>
+        </label>
+
+        <label style="display: flex; align-items: flex-start; gap: 10px; padding: 10px; background: var(--bg-card); border: 1px solid var(--card-border); border-radius: 8px; cursor: pointer;">
+          <input type="checkbox" id="expMemory" checked style="margin-top: 3px; accent-color: var(--accent);">
+          <div>
+            <div style="font-weight: 600; font-size: 13px;">🧠 Persistent Memory</div>
+            <div style="font-size: 12px; color: var(--text-muted);">MEMORY.md &amp; direktori memories/ (Pengetahuan &amp; catatan awet)</div>
+          </div>
+        </label>
+
+        <label style="display: flex; align-items: flex-start; gap: 10px; padding: 10px; background: var(--bg-card); border: 1px solid var(--card-border); border-radius: 8px; cursor: pointer;">
+          <input type="checkbox" id="expConfig" checked style="margin-top: 3px; accent-color: var(--accent);">
+          <div>
+            <div style="font-weight: 600; font-size: 13px;">⚙️ System Configuration</div>
+            <div style="font-size: 12px; color: var(--text-muted);">config.yaml &amp; auth.json (Model, custom providers &amp; parameter)</div>
+          </div>
+        </label>
+
+        <div style="padding: 10px; background: var(--bg-card); border: 1px solid var(--card-border); border-radius: 8px;">
+          <label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer;">
+            <input type="checkbox" id="expSkills" checked style="margin-top: 3px; accent-color: var(--accent);">
+            <div>
+              <div style="font-weight: 600; font-size: 13px;">⚡ Modular Skills</div>
+              <div style="font-size: 12px; color: var(--text-muted);">Kemampuan teknis, automasi, &amp; SOP skill</div>
+            </div>
+          </label>
+          <div id="skillsPickerBox" style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--card-border); display: flex; flex-direction: column; gap: 6px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; font-weight: 600; color: var(--text-muted);">
+              <span>PILIH DAFTAR SKILL:</span>
+              <div>
+                <a href="javascript:void(0)" id="selectAllSkills" style="color: var(--accent); margin-right: 8px;">Pilih Semua</a>
+                <a href="javascript:void(0)" id="unselectAllSkills" style="color: var(--text-muted);">Kosongkan</a>
+              </div>
+            </div>
+            <div id="skillsChecklistContainer" style="max-height: 140px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; padding-right: 4px;">
+              <div style="font-size: 12px; color: var(--text-muted);">Memuat daftar skill...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-actions" style="margin-top: auto;">
+        <button id="downloadBundleActionBtn" class="btn btn-primary" style="flex: 1;">Download Bundle Sekarang</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     const pin = localStorage.getItem('hermes_pin');
     if (!pin) {
@@ -436,6 +496,9 @@
     window.addEventListener('popstate', (e) => {
       if (document.getElementById('confirmModal').style.display === 'flex') {
         closeModal(false);
+      }
+      if (document.getElementById('exportModal').style.display === 'flex') {
+        closeExportModal();
       }
     });
 
@@ -640,15 +703,98 @@
     // Cek update otomatis saat halaman dimuat
     checkHermesUpdate(true);
 
-    // Download Backup
-    document.getElementById('downloadBackupBtn').addEventListener('click', () => {
-      const url = '/api/hermes/backup/export?pin=' + encodeURIComponent(pin);
+    // Export Modal Management & History Trap
+    const exportModal = document.getElementById('exportModal');
+    let loadedSkillsList = [];
+
+    function openExportModal() {
+      exportModal.style.display = 'flex';
+      history.pushState({ exportModalOpen: true }, '');
+      loadSkillsForExport();
+    }
+
+    function closeExportModal() {
+      exportModal.style.display = 'none';
+    }
+
+    async function loadSkillsForExport() {
+      const container = document.getElementById('skillsChecklistContainer');
+      if (loadedSkillsList.length > 0) return;
+      try {
+        const res = await fetch('/api/hermes/skills', {
+          headers: { 'X-Hermes-PIN': pin }
+        });
+        const data = await res.json();
+        if (data.skills && Array.isArray(data.skills)) {
+          loadedSkillsList = data.skills;
+          renderSkillsChecklist(loadedSkillsList);
+        } else {
+          container.innerHTML = '<div style="font-size: 12px; color: var(--text-muted);">Tidak ada skill kustom ditemukan.</div>';
+        }
+      } catch (err) {
+        container.innerHTML = '<div style="font-size: 12px; color: var(--danger);">Gagal memuat daftar skill.</div>';
+      }
+    }
+
+    function renderSkillsChecklist(skills) {
+      const container = document.getElementById('skillsChecklistContainer');
+      container.innerHTML = skills.map(s => `
+        <label style="display: flex; align-items: center; gap: 8px; font-size: 12px; padding: 3px 0; cursor: pointer;">
+          <input type="checkbox" class="skill-item-checkbox" value="${s.name}" checked style="accent-color: var(--accent);">
+          <span style="font-weight: 500;">${s.name}</span>
+        </label>
+      `).join('');
+    }
+
+    document.getElementById('openExportModalBtn').addEventListener('click', openExportModal);
+
+    document.getElementById('selectAllSkills').addEventListener('click', () => {
+      document.querySelectorAll('.skill-item-checkbox').forEach(cb => cb.checked = true);
+    });
+
+    document.getElementById('unselectAllSkills').addEventListener('click', () => {
+      document.querySelectorAll('.skill-item-checkbox').forEach(cb => cb.checked = false);
+    });
+
+    document.getElementById('expSkills').addEventListener('change', (e) => {
+      document.getElementById('skillsPickerBox').style.display = e.target.checked ? 'flex' : 'none';
+    });
+
+    document.getElementById('downloadBundleActionBtn').addEventListener('click', () => {
+      const items = [];
+      if (document.getElementById('expPersona').checked) items.push('persona');
+      if (document.getElementById('expMemory').checked) items.push('memory');
+      if (document.getElementById('expConfig').checked) items.push('config');
+      
+      let skillsParam = '';
+      if (document.getElementById('expSkills').checked) {
+        items.push('skills');
+        const selectedSkills = Array.from(document.querySelectorAll('.skill-item-checkbox:checked')).map(cb => cb.value);
+        if (selectedSkills.length > 0 && selectedSkills.length < loadedSkillsList.length) {
+          skillsParam = '&skills=' + encodeURIComponent(selectedSkills.join(','));
+        }
+      }
+
+      if (items.length === 0) {
+        showConfirm('Pilihan Kosong', 'Silakan centang setidaknya satu komponen yang ingin diexport.', false);
+        return;
+      }
+
+      const url = '/api/hermes/backup/export?pin=' + encodeURIComponent(pin) + 
+                  '&items=' + encodeURIComponent(items.join(',')) + skillsParam;
+
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'hermes-brain-backup.tar.gz';
+      a.download = 'hermes-export-bundle.tar.gz';
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
+
+      if (history.state && history.state.exportModalOpen) {
+        history.back();
+      } else {
+        closeExportModal();
+      }
     });
 
     // Import Backup

@@ -257,37 +257,66 @@ class HermesBrainHandler(http.server.BaseHTTPRequestHandler):
         if parsed.path.rstrip("/") == "/api/hermes/backup/export":
             try:
                 hermes_dir = os.path.expanduser("~/.hermes")
+                q = urllib.parse.parse_qs(parsed.query)
+                # Filter item modular: items=persona,memory,skills,config
+                # selected_skills=skill1,skill2
+                raw_items = q.get("items", ["all"])[0].split(",")
+                items_set = set(raw_items) if "all" not in raw_items else {"all"}
+                selected_skills = [s.strip() for s in q.get("skills", [""])[0].split(",") if s.strip()]
+
                 buf = io.BytesIO()
                 with tarfile.open(fileobj=buf, mode="w:gz") as tar:
-                    # Config, memory, soul, and skills (exclude heavy runtime cache / state.db 2GB+)
-                    files_to_bundle = [
-                        "config.yaml",
-                        "auth.json",
-                        "SOUL.md",
-                        "USER.md",
-                        "MEMORY.md",
-                        "IDENTITY.md",
-                        "TOOLS.md"
-                    ]
-                    for fname in files_to_bundle:
-                        fpath = os.path.join(hermes_dir, fname)
-                        if os.path.exists(fpath):
-                            tar.add(fpath, arcname=fname)
+                    include_all = ("all" in items_set)
 
-                    mem_dir = os.path.join(hermes_dir, "memories")
-                    if os.path.exists(mem_dir):
-                        tar.add(mem_dir, arcname="memories")
+                    # 1. Persona (SOUL, IDENTITY, USER, TOOLS)
+                    if include_all or "persona" in items_set:
+                        persona_files = ["SOUL.md", "IDENTITY.md", "USER.md", "TOOLS.md"]
+                        for fname in persona_files:
+                            fpath = os.path.join(hermes_dir, fname)
+                            if os.path.exists(fpath):
+                                tar.add(fpath, arcname=fname)
 
-                    skills_dir = os.path.join(hermes_dir, "skills")
-                    if os.path.exists(skills_dir):
-                        tar.add(skills_dir, arcname="skills")
+                    # 2. Memory (MEMORY.md & memories/)
+                    if include_all or "memory" in items_set:
+                        mem_file = os.path.join(hermes_dir, "MEMORY.md")
+                        if os.path.exists(mem_file):
+                            tar.add(mem_file, arcname="MEMORY.md")
+                        mem_dir = os.path.join(hermes_dir, "memories")
+                        if os.path.exists(mem_dir):
+                            tar.add(mem_dir, arcname="memories")
+
+                    # 3. Config (config.yaml, auth.json)
+                    if include_all or "config" in items_set:
+                        for fname in ["config.yaml", "auth.json"]:
+                            fpath = os.path.join(hermes_dir, fname)
+                            if os.path.exists(fpath):
+                                tar.add(fpath, arcname=fname)
+
+                    # 4. Skills (all atau specific skills)
+                    if include_all or "skills" in items_set:
+                        skills_dir = os.path.join(hermes_dir, "skills")
+                        if os.path.exists(skills_dir):
+                            if not selected_skills:
+                                # Export all skills
+                                tar.add(skills_dir, arcname="skills")
+                            else:
+                                # Export selected skills only
+                                for sname in selected_skills:
+                                    s_target = os.path.join(skills_dir, sname)
+                                    if os.path.exists(s_target):
+                                        tar.add(s_target, arcname=f"skills/{sname}")
+                                    else:
+                                        # Cek jika ada extensi .md
+                                        s_md = os.path.join(skills_dir, f"{sname}.md")
+                                        if os.path.exists(s_md):
+                                            tar.add(s_md, arcname=f"skills/{sname}.md")
 
                 buf.seek(0)
                 data = buf.read()
                 self.send_response(200)
                 self._send_cors()
                 self.send_header("Content-Type", "application/gzip")
-                self.send_header("Content-Disposition", 'attachment; filename="hermes-brain-backup.tar.gz"')
+                self.send_header("Content-Disposition", 'attachment; filename="hermes-export-bundle.tar.gz"')
                 self.send_header("Content-Length", str(len(data)))
                 self.end_headers()
                 self.wfile.write(data)
