@@ -9,7 +9,7 @@ Full-spectrum local-first web control center and system manager for **Hermes Age
 - **Dynamic Skills Hub**: Real-time procedural skill viewer and manager.
 - **Backup & Restore**: One-click local backup archive (`tar.gz`) export & import.
 - **Built-in Self Updater**: Git-based version checking and one-click updates directly from the settings panel.
-- **Zero-Secret Security**: No hardcoded credentials, PIN-protected admin session management.
+- **Zero-Secret Security**: No hardcoded credentials, PIN-protected admin session management (Default PIN: `123456`).
 
 ## Project Structure
 
