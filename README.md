@@ -2,7 +2,34 @@
 
 Full-spectrum local-first web control center and system manager for **Hermes Agent**.
 
-## Features
+## 🚀 Quick Start (NPX / NPM)
+
+No installation required, run directly anywhere:
+
+```bash
+npx hermes-remote
+```
+
+Or install globally:
+
+```bash
+npm install -g hermes-remote
+hermes-remote
+```
+
+### CLI Options
+
+```bash
+hermes-remote --port 8093       # Custom port
+hermes-remote --host 0.0.0.0     # Bind to specific interface
+hermes-remote --no-open          # Headless mode (don't open browser)
+hermes-remote --help             # View all options
+```
+
+- **Default Access PIN**: `123456` (or existing `~/.hermes/.pin_secret`).
+- **Dashboard URL**: `http://localhost:8093/hermes/`
+
+---
 
 - **Brain Model & Provider Switcher**: Real-time LLM inspection and dynamic model switching with 9Router integration.
 - **Persistent Memory & Context Vault**: View, search, and manage long-term persona notes and facts (`USER.md` & `MEMORY.md`).

@@ -25,8 +25,9 @@ import http.server
 import urllib.parse
 import urllib.request
 
-PORT = int(os.environ.get("HERMES_PORT", 8093))
-HERMES_WEB_DIR = os.environ.get("HERMES_WEB_DIR", "/var/www/hermes-remote")
+HOST = os.environ.get("HERMES_HOST", "0.0.0.0")
+PORT = int(os.environ.get("PORT", os.environ.get("HERMES_PORT", 8093)))
+HERMES_WEB_DIR = os.environ.get("HERMES_WEB_DIR", os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 HERMES_REPO_BRANCH = os.environ.get("HERMES_REPO_BRANCH", "main")
 CONFIG_PATH = os.environ.get("HERMES_CONFIG_PATH", os.path.expanduser("~/.hermes/config.yaml"))
 PIN_FILE = os.path.expanduser("~/.hermes/.pin_secret")
@@ -91,6 +92,48 @@ class HermesBrainHandler(http.server.BaseHTTPRequestHandler):
     def do_GET(self):
         parsed = urllib.parse.urlparse(self.path)
         path = parsed.path.rstrip("/")
+
+        # Static file fallback if requested (e.g. running standalone via CLI without Nginx)
+        if not path.startswith("/api/"):
+            clean_path = parsed.path
+            if clean_path.startswith("/hermes/"):
+                clean_path = clean_path[len("/hermes/"):]
+            clean_path = clean_path.lstrip("/")
+            if not clean_path or clean_path.endswith("/"):
+                clean_path = os.path.join(clean_path, "index.html")
+            
+            static_file = os.path.join(HERMES_WEB_DIR, clean_path)
+            if os.path.isdir(static_file):
+                static_file = os.path.join(static_file, "index.html")
+            
+            if os.path.exists(static_file) and os.path.isfile(static_file):
+                ext = os.path.splitext(static_file)[1].lower()
+                mimetypes = {
+                    ".html": "text/html; charset=utf-8",
+                    ".css": "text/css; charset=utf-8",
+                    ".js": "application/javascript; charset=utf-8",
+                    ".json": "application/json; charset=utf-8",
+                    ".svg": "image/svg+xml",
+                    ".png": "image/png",
+                    ".jpg": "image/jpeg",
+                    ".jpeg": "image/jpeg",
+                    ".ico": "image/x-icon",
+                    ".mp3": "audio/mpeg",
+                    ".wav": "audio/wav"
+                }
+                ctype = mimetypes.get(ext, "application/octet-stream")
+                try:
+                    with open(static_file, "rb") as sf:
+                        content = sf.read()
+                    self.send_response(200)
+                    self._send_cors()
+                    self.send_header("Content-Type", ctype)
+                    self.send_header("Content-Length", str(len(content)))
+                    self.end_headers()
+                    self.wfile.write(content)
+                    return
+                except Exception:
+                    pass
 
         if not self._check_auth():
             return self._send_json(401, {"success": False, "error": "Unauthorized: PIN diperlukan"})
@@ -692,6 +735,6 @@ class HermesBrainHandler(http.server.BaseHTTPRequestHandler):
 
 if __name__ == "__main__":
     socketserver.TCPServer.allow_reuse_address = True
-    with socketserver.TCPServer(("127.0.0.1", PORT), HermesBrainHandler) as httpd:
-        print(f"Hermes Brain API running on port {PORT}...")
+    with socketserver.TCPServer((HOST, PORT), HermesBrainHandler) as httpd:
+        print(f"Hermes Brain API running on {HOST}:{PORT}...")
         httpd.serve_forever()

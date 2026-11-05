@@ -1,0 +1,31 @@
+{
+  "name": "hermes-remote",
+  "version": "1.0.0",
+  "description": "Full-spectrum local-first web control center and system manager for Hermes Agent",
+  "main": "bin/cli.js",
+  "bin": {
+    "hermes-remote": "bin/cli.js"
+  },
+  "keywords": [
+    "hermes",
+    "hermes-agent",
+    "ai-agent",
+    "dashboard",
+    "control-center",
+    "llm",
+    "gateway"
+  ],
+  "author": "0xhannn",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/0xhannn/hermes-config-remote.git"
+  },
+  "bugs": {
+    "url": "https://github.com/0xhannn/hermes-config-remote/issues"
+  },
+  "homepage": "https://github.com/0xhannn/hermes-config-remote#readme",
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}
