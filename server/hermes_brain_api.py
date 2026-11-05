@@ -282,6 +282,37 @@ class HermesBrainHandler(http.server.BaseHTTPRequestHandler):
             except Exception as e:
                 return self._send_json(500, {"success": False, "error": str(e)})
 
+        if path == "/api/hermes/system/update/check":
+            try:
+                import subprocess
+                local_sha = subprocess.check_output(
+                    ["git", "-C", HERMES_WEB_DIR, "rev-parse", "HEAD"],
+                    stderr=subprocess.STDOUT
+                ).decode("utf-8").strip()
+                
+                remote_out = subprocess.check_output(
+                    ["git", "-C", HERMES_WEB_DIR, "ls-remote", "origin", f"refs/heads/{HERMES_REPO_BRANCH}"],
+                    stderr=subprocess.STDOUT, timeout=10
+                ).decode("utf-8").strip()
+                remote_sha = remote_out.split()[0] if remote_out else local_sha
+
+                has_update = (local_sha != remote_sha)
+                
+                log_out = subprocess.check_output(
+                    ["git", "-C", HERMES_WEB_DIR, "log", "-1", "--format=%h - %s (%cr)"],
+                    stderr=subprocess.STDOUT
+                ).decode("utf-8").strip()
+
+                return self._send_json(200, {
+                    "success": True,
+                    "local_sha": local_sha[:7],
+                    "remote_sha": remote_sha[:7],
+                    "has_update": has_update,
+                    "last_commit": log_out
+                })
+            except Exception as e:
+                return self._send_json(500, {"success": False, "error": str(e)})
+
         return self._send_json(404, {"success": False, "error": "Endpoint not found"})
 
     def do_POST(self):
