@@ -18,6 +18,7 @@ import yaml
 import shutil
 import tarfile
 import tempfile
+from datetime import datetime
 import io
 import socketserver
 import http.server
@@ -565,6 +566,53 @@ class HermesBrainHandler(http.server.BaseHTTPRequestHandler):
                 })
             except Exception as e:
                 return self._send_json(500, {"success": False, "error": str(e)})
+
+        if path == "/api/hermes/feedback":
+            category = body.get("category", "Saran").strip()
+            subject_input = body.get("subject", "").strip()
+            message_input = body.get("message", "").strip()
+            sender_name = body.get("sender_name", "").strip() or "Operator Hermes"
+
+            if not message_input:
+                return self._send_json(400, {"success": False, "error": "Pesan masukan tidak boleh kosong"})
+
+            full_subject = f"[Hermes Masukan - {category}] {subject_input or 'Tanpa Judul'}"
+            timestamp_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+            html_body = f"""
+            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background: #ffffff;">
+              <h2 style="margin: 0 0 12px; color: #2563eb; font-size: 20px;">Hermes Control Center — Kotak Masukan</h2>
+              <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; margin-bottom: 16px; font-size: 14px;">
+                <p style="margin: 0 0 6px;"><strong>Kategori:</strong> {category}</p>
+                <p style="margin: 0 0 6px;"><strong>Pengirim:</strong> {sender_name}</p>
+                <p style="margin: 0;"><strong>Waktu:</strong> {timestamp_str}</p>
+              </div>
+              <div style="font-size: 14px; line-height: 1.6; color: #1e293b; white-space: pre-wrap; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 16px;">
+{message_input}
+              </div>
+              <p style="margin: 16px 0 0; font-size: 12px; color: #94a3b8;">Dikirim otomatis oleh Hermes Brain API dari Control Center.</p>
+            </div>
+            """
+
+            try:
+                import smtplib, ssl
+                from email.mime.text import MIMEText
+                from email.mime.multipart import MIMEMultipart
+
+                msg = MIMEMultipart("alternative")
+                msg["Subject"] = full_subject
+                msg["From"] = "admin@0xhannn.com"
+                msg["To"] = "admin@0xhannn.com"
+                msg.attach(MIMEText(html_body, "html", "utf-8"))
+
+                ctx = ssl.create_default_context()
+                with smtplib.SMTP_SSL("smtp.zoho.com", 465, context=ctx, timeout=12) as s:
+                    s.login("admin@0xhannn.com", "ncBCGqLU9pYB")
+                    s.sendmail("admin@0xhannn.com", ["admin@0xhannn.com"], msg.as_string())
+
+                return self._send_json(200, {"success": True, "message": "Masukan berhasil dikirim ke admin@0xhannn.com"})
+            except Exception as e:
+                return self._send_json(500, {"success": False, "error": f"Gagal mengirim email: {str(e)}"})
 
         if path == "/api/hermes/backup/import":
             try:
