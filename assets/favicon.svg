@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <clipPath id="squircle">
+      <rect width="64" height="64" rx="14" ry="14"/>
+    </clipPath>
+  </defs>
+  <rect width="64" height="64" rx="14" ry="14" fill="#2563EB"/>
+  <!-- Caduceus / Hermes Winged Staff Vector minimal -->
+  <g fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" transform="translate(12, 10)">
+    <!-- Central Staff -->
+    <line x1="20" y1="4" x2="20" y2="42" stroke-width="3"/>
+    <circle cx="20" cy="4" r="3" fill="#FFFFFF"/>
+    <!-- Left Wing -->
+    <path d="M 19 8 C 11 4, 3 11, 4 20 C 10 21, 16 16, 19 14"/>
+    <!-- Right Wing -->
+    <path d="M 21 8 C 29 4, 37 11, 36 20 C 30 21, 24 16, 21 14"/>
+    <!-- Snakes / Infinity Intertwine -->
+    <path d="M 11 26 C 14 20, 26 20, 29 26 C 32 32, 20 34, 11 32 C 16 38, 24 38, 29 34"/>
+  </g>
+</svg>

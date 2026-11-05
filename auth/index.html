@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hermes Control Center</title>
+  <link rel="icon" type="image/svg+xml" href="/hermes/assets/hermes-icon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-page: #FAF8F5;
+      --card-bg: #FFFFFF;
+      --card-border: #E8E2D9;
+      --text-main: #1C1917;
+      --text-muted: #78716C;
+      --blue-dev: #2563EB;
+      --blue-hover: #1D4ED8;
+      --blue-border: #93C5FD;
+      --blue-soft: #EFF6FF;
+      --danger-red: #DC2626;
+      --danger-bg: #FEE2E2;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      background-color: var(--bg-page);
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: var(--text-main);
+      padding: 40px 20px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .auth-card {
+      background: #FFFFFF;
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 36px 28px;
+      text-align: center;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    }
+
+    .logo-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--blue-dev);
+      color: #FFFFFF;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      font-family: 'JetBrains Mono', monospace;
+      margin-bottom: 16px;
+    }
+
+    h1 {
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      margin-bottom: 6px;
+    }
+
+    p {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 24px;
+      line-height: 1.5;
+    }
+
+    .input-box {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 14px;
+      outline: none;
+      background: #FAF8F5;
+      text-align: center;
+      letter-spacing: 2px;
+      margin-bottom: 16px;
+      transition: all 0.15s ease;
+    }
+    .input-box:focus {
+      border-color: var(--blue-dev);
+      background: #FFFFFF;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+
+    .btn {
+      width: 100%;
+      background: var(--blue-dev);
+      color: #FFFFFF;
+      border: none;
+      border-radius: 8px;
+      padding: 11px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      font-family: inherit;
+    }
+    .btn:hover { background: var(--blue-hover); }
+
+    .err-msg {
+      background: var(--danger-bg);
+      color: var(--danger-red);
+      font-size: 12px;
+      padding: 8px 12px;
+      border-radius: 6px;
+      margin-bottom: 16px;
+      display: none;
+      font-family: 'JetBrains Mono', monospace;
+    }
+  </style>
+  <link rel="stylesheet" href="/hermes/assets/ui-enhancements.css?v=3">
+</head>
+<body>
+  <div class="auth-card">
+    <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 12px;">
+      <img src="/hermes/assets/hermes-icon.svg" alt="Hermes" style="width: 24px; height: 24px; border-radius: 6px;">
+      <div class="logo-badge" style="margin-bottom: 0;">⚡ HERMES GATEWAY</div>
+    </div>
+    <div style="font-size: 40px; margin-bottom: 12px;">🔒</div>
+    <h1>Autentikasi Master</h1>
+    <p>Masukkan Master PIN untuk mengakses seluruh ekosistem Hermes Control Hub.</p>
+
+    <div class="err-msg" id="errMsg">PIN Salah! Akses ditolak.</div>
+
+    <input type="password" id="pinField" class="input-box" placeholder="masukkan PIN" autofocus onkeypress="if(event.key === 'Enter') submitAuth()">
+    <button class="btn" id="submitBtn" onclick="submitAuth()">Masuk ke Portal</button>
+  </div>
+
+  <script>
+    async function submitAuth() {
+      const pin = document.getElementById('pinField').value.trim();
+      const err = document.getElementById('errMsg');
+      const btn = document.getElementById('submitBtn');
+      err.style.display = 'none';
+
+      if (!pin) {
+        err.innerText = 'PIN tidak boleh kosong';
+        err.style.display = 'block';
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerText = 'Memverifikasi...';
+
+      try {
+        const res = await fetch('/api/hermes/auth', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pin })
+        });
+        const data = await res.json();
+        if (data.success) {
+          localStorage.setItem('hermes_pin', pin);
+          // Ambil return target jika ada
+          const params = new URLSearchParams(window.location.search);
+          const next = params.get('next') || '/hermes/';
+          window.location.href = next;
+        } else {
+          err.innerText = data.error || 'PIN Salah!';
+          err.style.display = 'block';
+        }
+      } catch (e) {
+        err.innerText = 'Gagal menghubungi server';
+        err.style.display = 'block';
+      } finally {
+        btn.disabled = false;
+        btn.innerText = 'Masuk ke Portal';
+      }
+    }
+
+    // Auto verify if already in localStorage
+    window.onload = async () => {
+      const savedPin = localStorage.getItem('hermes_pin');
+      if (savedPin) {
+        try {
+          const res = await fetch('/api/hermes/auth', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ pin: savedPin })
+          });
+          const data = await res.json();
+          if (data.success) {
+            const params = new URLSearchParams(window.location.search);
+            const next = params.get('next') || '/hermes/';
+            window.location.href = next;
+          }
+        } catch (e) {}
+      }
+    };
+  </script>
+  <script src="/hermes/assets/ui-enhancements.js?v=2"></script>
+</body>
+</html>

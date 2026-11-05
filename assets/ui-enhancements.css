@@ -1,0 +1,115 @@
+/* Hermes UI Shared Polish: Background Pattern, Tactile Animation & Mobile Layout Optimization */
+:root {
+  /* Token Warna Tunggal & Mutlak untuk seluruh ekosistem Hermes */
+  --hermes-bg-base: #FAF8F5 !important;
+  --hermes-dot-color: #E2DBD0 !important;
+  --bg-page: #FAF8F5 !important;
+  --bg-warm: #FAF8F5 !important;
+  --card-border: #E8E2D9 !important;
+}
+
+html, body {
+  background-color: var(--hermes-bg-base) !important;
+  background-image: 
+    radial-gradient(var(--hermes-dot-color) 1px, transparent 1px),
+    radial-gradient(var(--hermes-dot-color) 1px, var(--hermes-bg-base) 1px) !important;
+  background-size: 24px 24px !important;
+  background-position: 0 0, 12px 12px !important;
+  background-attachment: fixed !important;
+  background-repeat: repeat !important;
+}
+
+/* Micro-interaction & Tactile Feedback */
+button, .btn, a, .clickable, .hub-card, .model-picker-option, .prov-card {
+  transition: transform 0.08s ease, background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+button:active, .btn:active, .clickable:active, .model-picker-option:active {
+  transform: scale(0.97) translateY(1px);
+}
+
+.hub-card:active, .prov-card:active {
+  transform: scale(0.985) translateY(1px);
+}
+
+/* ==========================================================================
+   Mobile Layout Optimization (website-design-ops: <= 767px)
+   ========================================================================== */
+@media (max-width: 767px) {
+  /* 1. Rampingkan Padding Container Layar */
+  body {
+    padding: 16px 14px !important;
+  }
+  .container {
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  /* 2. Single Column Stacking & Ergonomic Gaps */
+  .hero-grid, .hub-grid, .grid, .providers-grid {
+    grid-template-columns: 1fr !important;
+    gap: 14px !important;
+  }
+
+  /* 3. Card Padding Ergonomis */
+  .hero-card, .hub-card, .prov-card, .card, .auth-card {
+    padding: 16px 14px !important;
+    border-radius: 12px !important;
+  }
+
+  /* 4. Touch Targets Min-Height 44px untuk Tombol & Kontrol Input */
+  button, .btn, input[type="text"], input[type="password"], input[type="submit"] {
+    min-height: 44px !important;
+    font-size: 14px !important;
+  }
+
+  /* 5. Quick Switch / Model Control Stacking */
+  .switch-row {
+    flex-direction: column !important;
+    gap: 10px !important;
+  }
+  .switch-row input, .switch-row button, .switch-row .btn {
+    width: 100% !important;
+  }
+
+  /* 6. Header Breadcrumbs & Status Pill Ramping */
+  .header-row, .header {
+    margin-bottom: 20px !important;
+  }
+  .header h1 {
+    font-size: 20px !important;
+  }
+  .header p, .subtitle {
+    font-size: 13px !important;
+  }
+
+  /* 7. Modal Ergonomis & Hide Batal di Mobile */
+  .modal-card, .modal-dialog, #modelPickerModal > div, #providerModal > div, #confirmModal > div {
+    width: calc(100% - 24px) !important;
+    max-width: calc(100% - 24px) !important;
+    margin: 12px auto !important;
+    padding: 18px 16px !important;
+    border-radius: 14px !important;
+  }
+
+  /* Sembunyikan kontrol pembatalan di modal mobile (prioritas back Android) */
+  .modal-buttons .btn-secondary,
+  .modal-actions .btn-cancel,
+  .modal-cancel,
+  #confirmModalCancel {
+    display: none !important;
+  }
+  .modal-buttons .btn-primary,
+  .modal-actions .btn-save,
+  #confirmModalOk {
+    width: 100% !important;
+  }
+
+  /* 8. Safe Pre & Code Horizontal Scroll */
+  pre, code, .code-viewer, .table-container {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    max-width: 100% !important;
+  }
+}

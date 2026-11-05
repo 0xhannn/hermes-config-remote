@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hermes Control Center</title>
+  <link rel="icon" type="image/svg+xml" href="/hermes/assets/hermes-icon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-page: #FAF8F5;
+      --card-bg: #FFFFFF;
+      --card-border: #E8E2D9;
+      --text-main: #1C1917;
+      --text-muted: #78716C;
+      --blue-dev: #2563EB;
+      --blue-hover: #1D4ED8;
+      --blue-border: #93C5FD;
+      --blue-soft: #EFF6FF;
+      --tag-bg: #EFF6FF;
+      --accent-tag: #1E40AF;
+      --danger-red: #DC2626;
+      --danger-bg: #FEE2E2;
+      --danger-border: #FCA5A5;
+      --status-green: #22C55E;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      margin: 0; 
+      padding: 0; 
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+    *::-webkit-scrollbar {
+      display: none;
+    }
+
+    body {
+      background-color: var(--bg-page);
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: var(--text-main);
+      padding: 32px 36px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 100%;
+    }
+
+    header {
+      margin-bottom: 28px;
+    }
+
+    .brand-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    .logo-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--blue-dev);
+      color: #FFFFFF;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #DCFCE7;
+      color: #166534;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #22C55E;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.9); }
+    }
+
+    h1 {
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      color: var(--text-main);
+      margin-top: 6px;
+    }
+
+    .subtitle {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    /* Auth Box */
+    #authBox {
+      background: #FFFFFF;
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 32px 24px;
+      text-align: center;
+      max-width: 400px;
+      margin: 40px auto 0 auto;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+    }
+
+    .auth-input {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 14px;
+      margin: 16px 0;
+      outline: none;
+      background: #FAF8F5;
+    }
+    .auth-input:focus { border-color: var(--blue-dev); background: #FFFFFF; }
+
+    /* Button styles */
+    .btn {
+      background: var(--blue-dev);
+      color: #FFFFFF;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+      font-family: inherit;
+    }
+    .btn:hover { background: var(--blue-hover); }
+
+    .btn-secondary {
+      background: #FFFFFF;
+      color: var(--text-main);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 8px 16px;
+      font: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-secondary:hover { background: #FAF7F0; border-color: var(--blue-border); }
+
+    .btn-danger {
+      background: #FFFFFF;
+      color: var(--danger-red);
+      border: 1px solid var(--danger-border);
+    }
+    .btn-danger:hover { background: var(--danger-bg); }
+
+    .btn-sm {
+      padding: 4px 10px;
+      font-size: 12px;
+      border-radius: 6px;
+    }
+
+    /* Controls row */
+    .controls-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .search-box {
+      background: #FFFFFF;
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-size: 13px;
+      font-family: inherit;
+      color: var(--text-main);
+      width: 280px;
+      outline: none;
+    }
+    .search-box:focus { border-color: var(--blue-dev); }
+
+    /* Skills Grid */
+    .skills-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+      gap: 16px;
+    }
+
+    .skill-card {
+      background: #FAF7F0;
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: all 0.15s ease;
+      position: relative;
+    }
+
+    .skill-card:hover {
+      background: #FFFFFF;
+      border-color: var(--blue-border);
+      box-shadow: 0 4px 14px rgba(37, 99, 235, 0.06);
+      transform: translateY(-2px);
+    }
+
+    .skill-name {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--blue-dev);
+      word-break: break-all;
+      margin-bottom: 6px;
+    }
+
+    .skill-cat {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      background: var(--tag-bg);
+      color: var(--accent-tag);
+      padding: 2px 6px;
+      border-radius: 4px;
+      display: inline-block;
+      margin-bottom: 8px;
+    }
+
+    .skill-desc {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.5;
+      margin-bottom: 14px;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .skill-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding-top: 12px;
+      border-top: 1px dashed var(--card-border);
+    }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.4);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      backdrop-filter: blur(2px);
+      padding: 20px;
+    }
+
+    .modal-card {
+      background: #FFFFFF;
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 24px;
+      width: 100%;
+      max-width: 800px;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .modal-body {
+      overflow-y: auto;
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .skill-modal-fields { display: flex; gap: 12px; }
+    .skill-modal-field { flex: 1; min-width: 0; }
+    .modal-card h3 { min-width: 0; overflow-wrap: anywhere; }
+
+    .code-editor {
+      width: 100%;
+      height: 380px;
+      padding: 12px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      background: #FAF8F5;
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      outline: none;
+      resize: vertical;
+      line-height: 1.5;
+      color: #1C1917;
+    }
+    .code-editor:focus { border-color: var(--blue-dev); background: #FFFFFF; }
+
+    .modal-footer {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 16px;
+      padding-top: 12px;
+      border-top: 1px solid var(--card-border);
+    }
+
+    @media (max-width: 767px) {
+      .modal-cancel { display: none; }
+      .modal-card { max-height: calc(100dvh - 24px); padding: 18px; }
+      .modal-body { min-height: 0; }
+      .skill-modal-fields { flex-direction: column; gap: 0; }
+      .code-editor { height: min(48dvh, 380px); resize: none; }
+      .modal-footer { padding-bottom: env(safe-area-inset-bottom); }
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #1C1917;
+      color: #FFFFFF;
+      padding: 10px 18px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-family: 'JetBrains Mono', monospace;
+      display: none;
+      z-index: 2000;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+  </style>
+  <link rel="stylesheet" href="/hermes/assets/ui-enhancements.css?v=3">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="brand-row">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <img src="/hermes/assets/hermes-icon.svg" alt="Hermes" style="width: 22px; height: 22px; border-radius: 5px;">
+          <a href="/hermes/" class="logo-badge" style="text-decoration: none; color: #FFFFFF; font-size: 11px;">← HERMES ROOT</a>
+          <div class="logo-badge">HERMES SKILLS</div>
+        </div>
+        <div class="status-pill"><span class="status-dot"></span> LIVE AUDIT</div>
+      </div>
+      <h1>Skills Management &amp; Audit</h1>
+      <p class="subtitle">Inspeksi, audit, edit, dan hapus modul procedural knowledge yang digunakan oleh Fairy Agent.</p>
+    </header>
+
+    <div id="authBox">
+      <div style="font-size: 36px; margin-bottom: 8px;">🔐</div>
+      <h2 style="font-size: 18px; font-weight: 700;">Autentikasi Master</h2>
+      <p style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">Masukkan Master PIN untuk mengakses audit skills.</p>
+      <input type="password" id="pinInput" class="auth-input" placeholder="masukkan Master PIN" onkeypress="if(event.key === 'Enter') handleAuth()">
+      <button class="btn" style="width: 100%; justify-content: center;" onclick="handleAuth()">Buka Akses</button>
+    </div>
+
+    <div id="dashboardView" style="display: none;">
+      <div class="controls-row">
+        <input type="text" id="searchInput" class="search-box" placeholder="masukkan nama skill" oninput="filterSkills()">
+        <button class="btn" onclick="openCreateSkillModal()">+ Tambah Skill Baru</button>
+      </div>
+
+      <div class="skills-grid" id="skillsGrid"></div>
+    </div>
+  </div>
+
+  <!-- Modal Edit / View Skill -->
+  <div class="modal-overlay" id="skillModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="modalTitle" style="font-size: 16px; font-weight: 700;">Edit Skill</h3>
+      </div>
+      <div class="modal-body">
+        <div class="skill-modal-fields">
+          <div class="skill-modal-field">
+            <label style="font-size: 12px; font-weight: 600; color: var(--text-muted);">Nama Skill (slug):</label>
+            <input type="text" id="modalSkillName" class="auth-input" style="margin: 4px 0 8px 0;" placeholder="masukkan nama skill">
+          </div>
+          <div class="skill-modal-field">
+            <label style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Kategori (Folder Opsional)</label>
+            <input type="text" id="modalSkillCategory" class="auth-input" style="margin: 4px 0 8px 0;" placeholder="masukkan kategori">
+          </div>
+        </div>
+        <label style="font-size: 12px; font-weight: 600; color: var(--text-muted);">Konten SKILL.md (Frontmatter + Markdown Body):</label>
+        <textarea id="modalSkillContent" class="code-editor" placeholder="masukkan konten skill"></textarea>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary modal-cancel" onclick="closeModal()">Batal</button>
+        <button class="btn" onclick="saveSkill()">Simpan Perubahan</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast">Notifikasi</div>
+
+  <script>
+    let AUTH_PIN = localStorage.getItem('hermes_pin') || '';
+    let ALL_SKILLS = [];
+    let IS_NEW_SKILL = false;
+    let skillModalHistoryOpen = false;
+    function showSkillModal() {
+      const modal = document.getElementById('skillModal');
+      if (modal.style.display === 'flex') return;
+      history.pushState({ hermesModal: 'skill' }, '', location.href);
+      skillModalHistoryOpen = true;
+      modal.style.display = 'flex';
+    }
+    function dismissSkillModal() { closeSkillModal(); }
+    window.addEventListener('popstate', () => {
+      if (skillModalHistoryOpen) {
+        skillModalHistoryOpen = false;
+        document.getElementById('skillModal').style.display = 'none';
+      }
+    });
+
+    function closeSkillModal(fromBack = false) {
+      if (!skillModalHistoryOpen) return;
+      skillModalHistoryOpen = false;
+      document.getElementById('skillModal').style.display = 'none';
+      if (!fromBack) history.back();
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.innerText = msg;
+      t.style.display = 'block';
+      setTimeout(() => { t.style.display = 'none'; }, 3000);
+    }
+
+    async function handleAuth() {
+      const pin = document.getElementById('pinInput').value.trim();
+      if (!pin) return alert('PIN tidak boleh kosong');
+      try {
+        const res = await fetch('/api/hermes/auth', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pin })
+        });
+        const data = await res.json();
+        if (data.success) {
+          AUTH_PIN = pin;
+          localStorage.setItem('hermes_pin', pin);
+          initDashboard();
+        } else {
+          alert('PIN salah!');
+        }
+      } catch (e) {
+        alert('Gagal terhubung ke server');
+      }
+    }
+
+    async function initDashboard() {
+      document.getElementById('authBox').style.display = 'none';
+      document.getElementById('dashboardView').style.display = 'block';
+      await loadSkills();
+    }
+
+    async function loadSkills() {
+      try {
+        const res = await fetch('/api/hermes/skills', {
+          headers: { 'X-Hermes-PIN': AUTH_PIN }
+        });
+        const data = await res.json();
+        if (data.success) {
+          ALL_SKILLS = data.skills || [];
+          renderSkills(ALL_SKILLS);
+        } else {
+          alert(data.error || 'Gagal memuat skills');
+        }
+      } catch (e) {
+        showToast('Error fetch skills');
+      }
+    }
+
+    function renderSkills(skills) {
+      const grid = document.getElementById('skillsGrid');
+      grid.innerHTML = '';
+      if (skills.length === 0) {
+        grid.innerHTML = '<div style="color: var(--text-muted); font-size: 14px;">Tidak ada skill yang ditemukan.</div>';
+        return;
+      }
+
+      skills.forEach(s => {
+        const card = document.createElement('div');
+        card.className = 'skill-card';
+        card.innerHTML = `
+          <div>
+            <div class="skill-name">${s.name}</div>
+            ${s.category ? `<span class="skill-cat">${s.category}</span>` : ''}
+            <div class="skill-desc">${s.description || 'Tanpa deskripsi'}</div>
+          </div>
+          <div class="skill-actions">
+            <button class="btn btn-secondary btn-sm" onclick="openEditSkillModal('${s.name}')">Audit &amp; Edit</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteSkill('${s.name}')">Hapus</button>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    function filterSkills() {
+      const q = document.getElementById('searchInput').value.toLowerCase().trim();
+      if (!q) {
+        renderSkills(ALL_SKILLS);
+        return;
+      }
+      const filtered = ALL_SKILLS.filter(s => 
+        (s.name && s.name.toLowerCase().includes(q)) || 
+        (s.description && s.description.toLowerCase().includes(q)) ||
+        (s.category && s.category.toLowerCase().includes(q))
+      );
+      renderSkills(filtered);
+    }
+
+    async function openEditSkillModal(skillName) {
+      IS_NEW_SKILL = false;
+      document.getElementById('modalTitle').innerText = 'Audit & Edit Skill: ' + skillName;
+      document.getElementById('modalSkillName').value = skillName;
+      document.getElementById('modalSkillName').disabled = true;
+      document.getElementById('modalSkillCategory').value = '';
+      document.getElementById('modalSkillCategory').disabled = true;
+      document.getElementById('modalSkillContent').value = 'Memuat konten...';
+      showSkillModal();
+
+      try {
+        const res = await fetch('/api/hermes/skills/view?name=' + encodeURIComponent(skillName), {
+          headers: { 'X-Hermes-PIN': AUTH_PIN }
+        });
+        const data = await res.json();
+        if (data.success) {
+          document.getElementById('modalSkillContent').value = data.content || '';
+        } else {
+          document.getElementById('modalSkillContent').value = 'Gagal memuat: ' + (data.error || 'Error');
+        }
+      } catch (e) {
+        document.getElementById('modalSkillContent').value = 'Error loading content';
+      }
+    }
+
+    function openCreateSkillModal() {
+      IS_NEW_SKILL = true;
+      document.getElementById('modalTitle').innerText = 'Tambah Skill Baru';
+      document.getElementById('modalSkillName').value = '';
+      document.getElementById('modalSkillName').disabled = false;
+      document.getElementById('modalSkillCategory').value = '';
+      document.getElementById('modalSkillCategory').disabled = false;
+      document.getElementById('modalSkillContent').value = '---\\nname: \\ndescription: \\n---\\n\\n# Skill Title\\n\\nProsedur dan instruksi skill...';
+      showSkillModal();
+    }
+
+    function closeModal() {
+      dismissSkillModal();
+    }
+
+    async function saveSkill() {
+      const name = document.getElementById('modalSkillName').value.trim();
+      const category = document.getElementById('modalSkillCategory').value.trim();
+      const content = document.getElementById('modalSkillContent').value;
+
+      if (!name) return alert('Nama skill wajib diisi');
+      if (!content) return alert('Konten skill tidak boleh kosong');
+
+      try {
+        const res = await fetch('/api/hermes/skills/save', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Hermes-PIN': AUTH_PIN
+          },
+          body: JSON.stringify({
+            name,
+            category,
+            content,
+            is_new: IS_NEW_SKILL
+          })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast('Skill berhasil disimpan');
+          closeModal();
+          await loadSkills();
+        } else {
+          alert(data.error || 'Gagal menyimpan skill');
+        }
+      } catch (e) {
+        alert('Gagal mengirim request');
+      }
+    }
+
+    async function deleteSkill(skillName) {
+      if (!confirm(`Yakin ingin menghapus skill '${skillName}'? Tindakan ini permanen.`)) return;
+      try {
+        const res = await fetch('/api/hermes/skills/delete', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Hermes-PIN': AUTH_PIN
+          },
+          body: JSON.stringify({ name: skillName })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast(`Skill '${skillName}' berhasil dihapus`);
+          await loadSkills();
+        } else {
+          alert(data.error || 'Gagal menghapus skill');
+        }
+      } catch (e) {
+        alert('Gagal mengirim request delete');
+      }
+    }
+
+    // Auto auth if PIN exists
+    window.onload = () => {
+      if (AUTH_PIN) {
+        initDashboard();
+      } else {
+        window.location.href = '/hermes/auth/?next=' + encodeURIComponent(window.location.pathname);
+      }
+    };
+  </script>
+  <script src="/hermes/assets/ui-enhancements.js?v=2"></script>
+</body>
+</html>

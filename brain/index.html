@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hermes Control Center</title>
+  <link rel="icon" type="image/svg+xml" href="/hermes/assets/hermes-icon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-warm: #F5F0E6;
+      --card-bg: #FFFFFF;
+      --card-border: #E6DEC9;
+      --text-main: #1C1917;
+      --text-muted: #78716C;
+      --blue-dev: #2563EB;
+      --blue-dev-hover: #1D4ED8;
+      --blue-soft: #EFF6FF;
+      --blue-border: #BFDBFE;
+      --danger: #DC2626;
+      --danger-bg: #FEE2E2;
+      --shadow: 0 4px 20px -2px rgba(60, 50, 30, 0.06), 0 2px 6px -1px rgba(60, 50, 30, 0.04);
+    }
+    * { 
+      box-sizing: border-box; 
+      margin: 0; 
+      padding: 0; 
+      -webkit-tap-highlight-color: transparent;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+    *::-webkit-scrollbar {
+      display: none;
+    }
+    body {
+      background-color: var(--bg-warm);
+      color: var(--text-main);
+      font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+      min-height: 100vh;
+      padding: 24px 32px 80px;
+      -webkit-font-smoothing: antialiased;
+    }
+    .container { width: 100%; max-width: 100%; margin: 0; }
+    header { margin-bottom: 24px; }
+    .brand-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+    .logo-badge {
+      background: var(--blue-dev);
+      color: #FFFFFF;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .status-pill {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      font-family: 'JetBrains Mono', monospace;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .status-dot {
+      width: 8px; height: 8px; background-color: #10B981; border-radius: 50%;
+      box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+    }
+    h1 { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; margin-top: 6px; }
+    .subtitle { color: var(--text-muted); font-size: 14px; margin-top: 4px; }
+
+    #authBox {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 28px;
+      max-width: 420px;
+      margin: 40px auto 0;
+      box-shadow: var(--shadow);
+      text-align: center;
+    }
+    .auth-input {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      font-size: 15px;
+      margin: 16px 0 12px;
+      text-align: center;
+      font-family: 'JetBrains Mono', monospace;
+      outline: none;
+    }
+    .auth-input:focus { border-color: var(--blue-dev); }
+
+    .btn {
+      background: var(--blue-dev);
+      color: #fff;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: background 0.2s;
+      font-family: inherit;
+    }
+    .btn:hover { background: var(--blue-dev-hover); }
+    .btn-secondary { background: #E5E7EB; color: #374151; }
+    .btn-secondary:hover { background: #D1D5DB; }
+    .btn-danger { background: var(--danger); color: #fff; }
+    .btn-danger:hover { background: #B91C1C; }
+    .btn-sm { padding: 6px 12px; font-size: 12px; }
+
+    #dashboardView { display: none; }
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    @media (min-width: 900px) {
+      .hero-grid {
+        grid-template-columns: 1.1fr 1fr;
+        align-items: stretch;
+      }
+    }
+    .hero-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 18px 20px;
+      margin-bottom: 0;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 14px;
+    }
+    .hero-card.hero-active {
+      border: 2px solid var(--blue-border);
+    }
+    .hero-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .hero-meta h3 {
+      font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;
+      color: var(--text-muted); font-family: 'JetBrains Mono', monospace;
+    }
+    .hero-model {
+      font-size: 22px; font-weight: 800; color: var(--blue-dev);
+      font-family: 'JetBrains Mono', monospace; margin-top: 4px;
+      word-break: break-all;
+    }
+    .hero-details { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+
+    .section-title-row {
+      display: flex; align-items: center; justify-content: space-between; margin: 28px 0 14px;
+    }
+    .section-title { font-size: 18px; font-weight: 700; }
+    .provider-grid { display: grid; grid-template-columns: 1fr; gap: 14px; }
+    @media (min-width: 768px) {
+      .provider-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    .prov-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 14px;
+    }
+    .prov-card.is-active { border-color: var(--blue-dev); background: #FAFCFF; }
+    .prov-title {
+      font-size: 15px; font-weight: 700; display: flex; align-items: center; justify-content: space-between;
+    }
+    .active-badge {
+      background: #DCFCE7; color: #166534; font-size: 11px; font-weight: 700;
+      padding: 2px 8px; border-radius: 6px; font-family: 'JetBrains Mono', monospace;
+    }
+    .prov-info {
+      font-size: 13px; color: var(--text-muted); display: flex; flex-direction: column; gap: 4px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .prov-actions {
+      display: flex; gap: 8px; flex-wrap: wrap; border-top: 1px solid #F3EDE2; padding-top: 12px;
+    }
+
+    .modal-overlay {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.4); display: none; align-items: center; justify-content: center;
+      padding: 16px; z-index: 1000;
+    }
+    .modal-box {
+      background: var(--card-bg); border: 1px solid var(--card-border);
+      border-radius: 14px; padding: 24px; max-width: 480px; width: 100%;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.15);
+    }
+    .modal-title { font-size: 18px; font-weight: 700; margin-bottom: 16px; }
+    .form-group { margin-bottom: 14px; }
+    .form-group label {
+      display: block; font-size: 12px; font-weight: 600; color: var(--text-muted);
+      margin-bottom: 6px; text-transform: uppercase; font-family: 'JetBrains Mono', monospace;
+    }
+    .form-control {
+      width: 100%; padding: 10px 12px; border: 1px solid var(--card-border);
+      border-radius: 8px; font-size: 14px; outline: none; font-family: inherit;
+    }
+    .form-control:focus { border-color: var(--blue-dev); }
+    .model-picker-list { display: grid; gap: 8px; max-height: 60vh; overflow-y: auto; }
+    .model-picker-option { width: 100%; justify-content: flex-start; text-align: left; background: #FFFFFF; color: var(--text-main); border: 1px solid var(--card-border); }
+    .model-picker-option:hover,
+    .model-picker-option.is-selected { border-color: var(--blue-border); background: var(--blue-soft); }
+    .modal-buttons { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+    @media (max-width: 767px) {
+      .modal-buttons .btn-secondary { display: none; }
+    }
+    .toast {
+      position: fixed; bottom: 24px; right: 24px; background: var(--text-main);
+      color: #fff; padding: 12px 20px; border-radius: 8px; font-size: 14px; font-weight: 600;
+      display: none; z-index: 2000; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+  </style>
+  <link rel="stylesheet" href="/hermes/assets/ui-enhancements.css?v=3">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="brand-row">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <img src="/hermes/assets/hermes-icon.svg" alt="Hermes" style="width: 22px; height: 22px; border-radius: 5px;">
+          <a href="/hermes/" class="logo-badge" style="text-decoration: none; color: #FFFFFF; font-size: 11px;">← HERMES ROOT</a>
+          <div class="logo-badge">Hermes Brain v3.0</div>
+        </div>
+        <div class="status-pill"><span class="status-dot"></span> Live Real-Time SSoT</div>
+      </div>
+      <h1>Model &amp; Provider Registry</h1>
+      <p class="subtitle">Panel kendali model aktif dan manajemen custom provider runtime Hermes.</p>
+    </header>
+
+    <div id="authBox">
+      <div style="font-size: 36px; margin-bottom: 8px;">🔐</div>
+      <h2 style="font-size: 18px; font-weight: 700;">Autentikasi Master</h2>
+      <p style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">Masukkan Master PIN untuk mengakses panel kendali.</p>
+      <input type="password" id="pinInput" class="auth-input" placeholder="masukkan Master PIN" onkeypress="if(event.key === 'Enter') handleAuth()">
+      <button class="btn" style="width: 100%; justify-content: center;" onclick="handleAuth()">Buka Akses</button>
+    </div>
+
+    <div id="dashboardView">
+      <div class="hero-grid">
+        <!-- Card 1: Active Model in Use -->
+        <div class="hero-card hero-active">
+          <div>
+            <div class="hero-card-header">
+              <div class="hero-meta">
+                <h3>Active Model in Use</h3>
+              </div>
+            </div>
+            <div class="hero-model" id="activeModelDisplay">-</div>
+            <div class="hero-details" id="activeProviderDisplay">Provider: - | Base URL: -</div>
+          </div>
+        </div>
+
+        <!-- Card 2: Quick Switch Model -->
+        <div class="hero-card">
+          <div>
+            <div class="hero-meta">
+              <h3>Ganti Model Aktif</h3>
+            </div>
+            <p style="font-size: 12px; color: var(--text-muted); margin: 4px 0 10px;">Pilih dari router lokal atau ketik ID model:</p>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+              <button class="btn btn-secondary btn-sm" onclick="openModelPicker('quick')">Pilih dari 9Router</button>
+              <input type="text" id="quickCustomInput" class="form-control" placeholder="masukkan nama model" style="flex: 1; min-width: 140px; padding: 6px 10px; font-size: 13px;">
+              <button class="btn btn-sm" onclick="applyQuickSwitch()">Ganti</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title-row">
+        <div class="section-title">Daftar Provider</div>
+        <button class="btn btn-sm" onclick="openAddProviderModal()">+ Tambah Provider</button>
+      </div>
+
+      <div id="providerGrid" class="provider-grid"></div>
+    </div>
+  </div>
+
+  <div id="providerModal" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-title" id="modalTitle">Tambah Provider</div>
+      <input type="hidden" id="modalOrigName">
+      <div class="form-group">
+        <label>Nama Provider</label>
+        <input type="text" id="modalName" class="form-control" placeholder="masukkan nama provider">
+      </div>
+      <div class="form-group">
+        <label>BASE URL (OPSIONAL)</label>
+        <input type="text" id="modalBaseUrl" class="form-control" placeholder="masukkan URL API">
+      </div>
+      <div class="form-group">
+        <label>MODEL NAME (DEFAULT)</label>
+        <input type="text" id="modalModel" class="form-control" placeholder="masukkan nama model">
+      </div>
+      <div class="form-group">
+        <label>API KEY</label>
+        <input type="password" id="modalApiKey" class="form-control" placeholder="masukkan API Key">
+      </div>
+      <div class="modal-buttons">
+        <button class="btn btn-secondary" onclick="closeModal()">Batal</button>
+        <button class="btn" onclick="saveProviderModal()">Simpan</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="modelPickerModal" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-title" id="modelPickerTitle">Pilih Model</div>
+      <div id="modelPickerList" class="model-picker-list"></div>
+      <div class="modal-buttons">
+        <button class="btn btn-secondary" onclick="closeModelPicker()">Batal</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Custom Confirm Modal -->
+  <div id="confirmModal" class="modal-overlay" style="z-index: 1100;">
+    <div class="modal-box" style="max-width: 420px;">
+      <div class="modal-title" id="confirmModalTitle">Konfirmasi</div>
+      <p id="confirmModalMessage" style="font-size: 14px; color: var(--text-main); margin: 12px 0 20px; line-height: 1.5;"></p>
+      <div class="modal-buttons">
+        <button class="btn btn-secondary" id="confirmModalCancelBtn" onclick="closeConfirmModal(false)">Batal</button>
+        <button class="btn" id="confirmModalOkBtn" onclick="resolveConfirmModal(true)">Oke</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+    let MASTER_PIN = localStorage.getItem('hermes_pin') || '';
+    let APP_STATE = null;
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.innerText = msg;
+      t.style.display = 'block';
+      setTimeout(() => { t.style.display = 'none'; }, 3000);
+    }
+
+    async function apiFetch(endpoint, method = 'GET', body = null) {
+      const opts = {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Hermes-PIN': MASTER_PIN
+        }
+      };
+      if (body) opts.body = JSON.stringify(body);
+      const res = await fetch('/api/hermes/' + endpoint, opts);
+      return res.json();
+    }
+
+    async function handleAuth() {
+      const pin = document.getElementById('pinInput').value.trim();
+      if (!pin) return alert('Masukkan PIN');
+
+      try {
+        const res = await fetch('/api/hermes/auth', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({pin})
+        });
+        const data = await res.json();
+        if (data.success) {
+          MASTER_PIN = pin;
+          localStorage.setItem('hermes_pin', pin);
+          document.getElementById('authBox').style.display = 'none';
+          document.getElementById('dashboardView').style.display = 'block';
+          loadDashboard();
+        } else {
+          alert('PIN salah: ' + (data.error || 'Akses ditolak'));
+        }
+      } catch (e) {
+        alert('Gagal panggil API: ' + e.message);
+      }
+    }
+
+    function logout() {
+      MASTER_PIN = '';
+      localStorage.removeItem('hermes_pin');
+      window.location.href = '/hermes/auth/?next=' + encodeURIComponent(window.location.pathname);
+    }
+
+    async function loadDashboard() {
+      try {
+        const data = await apiFetch('config');
+        if (!data.success) {
+          logout();
+          return;
+        }
+        APP_STATE = data;
+        renderDashboard();
+      } catch (e) {
+        showToast('Error: ' + e.message);
+      }
+    }
+
+    function renderDashboard() {
+      if (!APP_STATE) return;
+
+      document.getElementById('activeModelDisplay').innerText = APP_STATE.active.model;
+      document.getElementById('activeProviderDisplay').innerText = 
+        `Provider: ${APP_STATE.active.provider} | Base URL: ${APP_STATE.active.base_url || 'Default'}`;
+
+      const grid = document.getElementById('providerGrid');
+      grid.innerHTML = '';
+
+      if (!APP_STATE.providers || APP_STATE.providers.length === 0) {
+        grid.innerHTML = '<div style="grid-column: 1/-1; padding: 24px; text-align: center; color: var(--text-muted);">Belum ada provider kustom.</div>';
+        return;
+      }
+
+      APP_STATE.providers.forEach(p => {
+        const isCurrentActive = (p.model === APP_STATE.active.model);
+        const card = document.createElement('div');
+        card.className = 'prov-card' + (isCurrentActive ? ' is-active' : '');
+        
+        card.innerHTML = `
+          <div>
+            <div class="prov-title">
+              <span>${p.name} <small style="font-size: 11px; color: var(--text-muted); font-weight: 500;">(${p.type || 'custom'})</small></span>
+              ${isCurrentActive ? '<span class="active-badge">ACTIVE</span>' : ''}
+            </div>
+            <div class="prov-info" style="margin-top: 8px;">
+              <div>• Base URL: ${p.base_url}</div>
+              <div style="display: flex; align-items: center; gap: 6px; margin: 4px 0;">
+                <span>• Model:</span>
+                <span>${p.model}</span>
+              </div>
+              <div>• Key / Auth: ${p.has_key ? '✓ Terpasang' : '✗ Kosong'}</div>
+            </div>
+          </div>
+          <div class="prov-actions">
+            <button class="btn btn-sm" onclick="openModelPicker('provider', '${p.name}')">Pilih &amp; Aktifkan</button>
+            ${p.type === 'custom' ? `
+              <button class="btn btn-secondary btn-sm" onclick="openEditProviderModal('${p.name}', '${p.base_url}', '${p.model}')">Edit</button>
+              <button class="btn btn-danger btn-sm" onclick="deleteProvider('${p.name}')">Hapus</button>
+            ` : '<span style="font-size: 11px; color: var(--text-muted); align-self: center;">Built-in / OAuth</span>'}
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    let confirmModalHistoryOpen = false;
+    let confirmResolver = null;
+
+    function showConfirm(message, title = 'Konfirmasi') {
+      return new Promise(resolve => {
+        confirmResolver = resolve;
+        document.getElementById('confirmModalTitle').textContent = title;
+        document.getElementById('confirmModalMessage').textContent = message;
+        const modal = document.getElementById('confirmModal');
+        if (!confirmModalHistoryOpen) {
+          history.pushState({ hermesModal: 'confirm' }, '', location.href);
+          confirmModalHistoryOpen = true;
+        }
+        modal.style.display = 'flex';
+      });
+    }
+
+    function resolveConfirmModal(value) {
+      const res = confirmResolver;
+      confirmResolver = null;
+      closeConfirmModal(false);
+      if (res) res(value);
+    }
+
+    function closeConfirmModal(fromBack = false) {
+      if (!confirmModalHistoryOpen) return;
+      confirmModalHistoryOpen = false;
+      document.getElementById('confirmModal').style.display = 'none';
+      if (!fromBack) history.back();
+      if (confirmResolver) {
+        const res = confirmResolver;
+        confirmResolver = null;
+        res(false);
+      }
+    }
+
+    let modelPickerHistoryOpen = false;
+    let modelPickerTarget = null;
+    let modelPickerProvider = null;
+    function openModelPicker(target, provider = null) {
+      modelPickerTarget = target;
+      modelPickerProvider = provider;
+      const list = document.getElementById('modelPickerList');
+      const providerData = APP_STATE?.providers?.find(p => p.name === provider);
+      const models = target === 'quick'
+        ? (APP_STATE?.router_models || [])
+        : (providerData?.models?.length ? providerData.models : (providerData?.model ? [providerData.model] : []));
+      const selectedModel = target === 'quick' ? APP_STATE?.active?.model : providerData?.model;
+      document.getElementById('modelPickerTitle').textContent = target === 'quick' ? 'Pilih Model dari 9Router' : `Pilih Model — ${provider}`;
+      list.replaceChildren();
+      if (!models.length) {
+        const empty = document.createElement('p');
+        empty.textContent = 'Tidak ada model tersedia.';
+        list.appendChild(empty);
+      }
+      models.forEach(model => {
+        const option = document.createElement('button');
+        option.type = 'button';
+        option.className = 'btn model-picker-option';
+        option.textContent = model;
+        option.setAttribute('aria-pressed', String(model === selectedModel));
+        option.classList.toggle('is-selected', model === selectedModel);
+        option.onclick = () => selectModel(model);
+        list.appendChild(option);
+      });
+      const modal = document.getElementById('modelPickerModal');
+      if (!modelPickerHistoryOpen) {
+        history.pushState({ hermesModal: 'model-picker' }, '', location.href);
+        modelPickerHistoryOpen = true;
+      }
+      modal.style.display = 'flex';
+    }
+    async function selectModel(model) {
+      const target = modelPickerTarget;
+      const provider = modelPickerProvider;
+      if (target === 'quick') {
+        closeModelPicker();
+        document.getElementById('quickCustomInput').value = model;
+      } else {
+        const ok = await showConfirm(`Ganti model aktif ke '${model}'?`);
+        if (!ok) return;
+        closeModelPicker();
+        await switchModel(provider, model, true);
+      }
+    }
+    function closeModelPicker(fromBack = false) {
+      if (!modelPickerHistoryOpen) return;
+      modelPickerHistoryOpen = false;
+      document.getElementById('modelPickerModal').style.display = 'none';
+      if (!fromBack) history.back();
+    }
+
+    async function applyQuickSwitch() {
+      const targetModel = document.getElementById('quickCustomInput').value.trim();
+      if (!targetModel) return alert('Pilih atau ketik model yang ingin diaktifkan');
+      await switchModel('custom', targetModel);
+    }
+
+    async function switchModel(provider, model, skipConfirm = false) {
+      if (!skipConfirm) {
+        const ok = await showConfirm(`Ganti model aktif ke '${model}'?`);
+        if (!ok) return;
+      }
+      try {
+        const res = await apiFetch('model/switch', 'POST', {provider, model});
+        if (res.success) {
+          showToast(res.message);
+          loadDashboard();
+        } else {
+          alert('Gagal: ' + res.error);
+        }
+      } catch (e) {
+        alert('Error: ' + e.message);
+      }
+    }
+
+    let providerModalHistoryOpen = false;
+    function showProviderModal() {
+      const modal = document.getElementById('providerModal');
+      if (modal.style.display === 'flex') return;
+      history.pushState({ hermesModal: 'provider' }, '', location.href);
+      providerModalHistoryOpen = true;
+      modal.style.display = 'flex';
+    }
+
+    function dismissProviderModal() { closeProviderModal(); }
+    window.addEventListener('popstate', () => {
+      if (confirmModalHistoryOpen) closeConfirmModal(true);
+      else if (modelPickerHistoryOpen) closeModelPicker(true);
+      else if (providerModalHistoryOpen) closeProviderModal(true);
+    });
+
+    function openAddProviderModal() {
+      document.getElementById('modalTitle').innerText = 'Tambah Provider Baru';
+      document.getElementById('modalOrigName').value = '';
+      document.getElementById('modalName').value = '';
+      document.getElementById('modalBaseUrl').value = '';
+      document.getElementById('modalModel').value = '';
+      document.getElementById('modalApiKey').value = '';
+      showProviderModal();
+    }
+
+    function openEditProviderModal(name, baseUrl, model) {
+      document.getElementById('modalTitle').innerText = 'Edit Provider: ' + name;
+      document.getElementById('modalOrigName').value = name;
+      document.getElementById('modalName').value = name;
+      document.getElementById('modalBaseUrl').value = baseUrl;
+      document.getElementById('modalModel').value = model;
+      document.getElementById('modalApiKey').value = '';
+      showProviderModal();
+    }
+
+    function closeModal() {
+      dismissProviderModal();
+    }
+
+    function closeProviderModal(fromBack = false) {
+      if (!providerModalHistoryOpen) return;
+      providerModalHistoryOpen = false;
+      document.getElementById('providerModal').style.display = 'none';
+      if (!fromBack) history.back();
+    }
+
+    async function saveProviderModal() {
+      const origName = document.getElementById('modalOrigName').value.trim();
+      const name = document.getElementById('modalName').value.trim();
+      const baseUrl = document.getElementById('modalBaseUrl').value.trim();
+      const model = document.getElementById('modalModel').value.trim();
+      const apiKey = document.getElementById('modalApiKey').value.trim();
+
+      if (!name || !baseUrl || !model) {
+        return alert('Nama, Base URL, dan Default Model wajib diisi');
+      }
+
+      try {
+        let res;
+        if (origName) {
+          res = await apiFetch('provider/edit', 'POST', {
+            name: origName,
+            new_name: name,
+            base_url: baseUrl,
+            model: model,
+            api_key: apiKey
+          });
+        } else {
+          res = await apiFetch('provider/add', 'POST', {
+            name,
+            base_url: baseUrl,
+            model,
+            api_key: apiKey
+          });
+        }
+
+        if (res.success) {
+          showToast(res.message);
+          closeModal();
+          loadDashboard();
+        } else {
+          alert('Gagal: ' + res.error);
+        }
+      } catch (e) {
+        alert('Error: ' + e.message);
+      }
+    }
+
+    async function deleteProvider(name) {
+      const ok = await showConfirm(`Hapus provider '${name}'?`, 'Hapus Provider');
+      if (!ok) return;
+      try {
+        const res = await apiFetch('provider/delete', 'POST', {name});
+        if (res.success) {
+          showToast(res.message);
+          loadDashboard();
+        } else {
+          alert('Gagal: ' + res.error);
+        }
+      } catch (e) {
+        alert('Error: ' + e.message);
+      }
+    }
+
+    if (MASTER_PIN) {
+      document.getElementById('authBox').style.display = 'none';
+      document.getElementById('dashboardView').style.display = 'block';
+      loadDashboard();
+    } else {
+      window.location.href = '/hermes/auth/?next=' + encodeURIComponent(window.location.pathname);
+    }
+  </script>
+  <script src="/hermes/assets/ui-enhancements.js?v=2"></script>
+</body>
+</html>

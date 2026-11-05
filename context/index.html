@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hermes Control Center</title>
+  <link rel="icon" type="image/svg+xml" href="/hermes/assets/hermes-icon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-warm: #F5F0E6;
+      --card-bg: #FFFFFF;
+      --card-border: #E6DEC9;
+      --text-main: #1C1917;
+      --text-muted: #78716C;
+      --blue-dev: #2563EB;
+      --blue-dev-hover: #1D4ED8;
+      --blue-soft: #EFF6FF;
+      --blue-border: #BFDBFE;
+      --accent-tag: #0284C7;
+      --tag-bg: #E0F2FE;
+      --danger-red: #DC2626;
+      --danger-bg: #FEF2F2;
+      --danger-border: #FECACA;
+      --shadow: 0 4px 20px -2px rgba(60, 50, 30, 0.06), 0 2px 6px -1px rgba(60, 50, 30, 0.04);
+      --shadow-hover: 0 10px 25px -3px rgba(37, 99, 235, 0.12), 0 4px 10px -2px rgba(37, 99, 235, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      margin: 0;
+      padding: 0;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+    *::-webkit-scrollbar {
+      display: none;
+    }
+
+    body {
+      background-color: var(--bg-warm);
+      color: var(--text-main);
+      font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+      min-height: 100vh;
+      padding: 24px 32px 80px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 100%;
+      margin: 0;
+    }
+
+    /* Header */
+    header {
+      margin-bottom: 28px;
+    }
+
+    .brand-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    .logo-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--blue-dev);
+      color: #FFFFFF;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #DCFCE7;
+      color: #166534;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #22C55E;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.9); }
+    }
+
+    h1 {
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      color: var(--text-main);
+      margin-top: 6px;
+    }
+
+    .subtitle {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    /* Main 2 Switcher Cards */
+    .vault-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    @media (max-width: 640px) {
+      .vault-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .vault-card {
+      background: var(--card-bg);
+      border: 2px solid var(--card-border);
+      border-radius: 14px;
+      padding: 20px;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: var(--shadow);
+      position: relative;
+      user-select: none;
+    }
+
+    .vault-card:hover {
+      border-color: var(--blue-dev);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-hover);
+    }
+
+    .vault-card.active {
+      border-color: var(--blue-dev);
+      background: #FFFFFF;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15), var(--shadow-hover);
+    }
+
+    .vault-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .vault-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      background: var(--blue-soft);
+      border: 1px solid var(--blue-border);
+    }
+
+    .vault-count {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--blue-dev);
+      background: var(--blue-soft);
+      padding: 4px 10px;
+      border-radius: 6px;
+      border: 1px solid var(--blue-border);
+    }
+
+    .vault-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-bottom: 4px;
+    }
+
+    .vault-desc {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    .active-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 12px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--blue-dev);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* List Items View */
+    .content-section {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 20px;
+      box-shadow: var(--shadow);
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 16px;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--card-border);
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .section-title-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .section-title {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .section-meta {
+      font-size: 13px;
+      color: var(--text-muted);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .search-box {
+      background: var(--bg-warm);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 13px;
+      font-family: inherit;
+      color: var(--text-main);
+      width: 220px;
+      outline: none;
+      transition: border-color 0.15s ease;
+    }
+
+    .search-box:focus {
+      border-color: var(--blue-dev);
+      background: #FFFFFF;
+    }
+
+    .item-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .entry-card {
+      background: #FAF7F0;
+      border: 1px solid var(--card-border);
+      border-left: 4px solid var(--blue-dev);
+      border-radius: 10px;
+      padding: 16px;
+      transition: all 0.15s ease;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      position: relative;
+    }
+
+    .entry-card:hover {
+      background: #FFFFFF;
+      border-color: var(--blue-border);
+      border-left-color: var(--blue-dev);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+    }
+
+    .entry-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .entry-header-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .entry-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--accent-tag);
+      background: var(--tag-bg);
+      padding: 2px 8px;
+      border-radius: 4px;
+      letter-spacing: 0.3px;
+      display: inline-block;
+    }
+
+    .entry-index {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    .btn-delete {
+      background: #FFFFFF;
+      border: 1px solid var(--card-border);
+      color: var(--text-muted);
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      font-family: 'JetBrains Mono', monospace;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.15s ease;
+    }
+
+    .btn-delete:hover {
+      background: var(--danger-bg);
+      border-color: var(--danger-border);
+      color: var(--danger-red);
+    }
+
+    .entry-text {
+      font-size: 14px;
+      line-height: 1.6;
+      color: var(--text-main);
+      word-break: break-word;
+    }
+
+    .entry-text code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12.5px;
+      background: #ECE6D8;
+      color: #0F172A;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+
+    /* Modal Konfirmasi */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(15, 23, 42, 0.45);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 999;
+    }
+
+    .modal-card {
+      background: #FFFFFF;
+      border: 2px solid var(--card-border);
+      border-radius: 14px;
+      max-width: 440px;
+      width: 100%;
+      padding: 24px;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    }
+
+    .modal-title {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--text-main);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .modal-desc {
+      font-size: 14px;
+      color: var(--text-muted);
+      line-height: 1.5;
+      margin-bottom: 16px;
+    }
+
+    .modal-quote {
+      background: var(--bg-warm);
+      border-left: 3px solid var(--danger-red);
+      padding: 10px 14px;
+      border-radius: 6px;
+      font-size: 13px;
+      color: var(--text-main);
+      margin-bottom: 20px;
+      max-height: 120px;
+      overflow-y: auto;
+      font-style: italic;
+    }
+
+    .modal-actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+    @media (max-width: 767px) {
+      .modal-actions .btn-cancel { display: none; }
+    }
+
+    .btn-cancel {
+      background: var(--bg-warm);
+      border: 1px solid var(--card-border);
+      color: var(--text-main);
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .btn-confirm-delete {
+      background: var(--danger-red);
+      border: 1px solid var(--danger-red);
+      color: #FFFFFF;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-confirm-delete:hover {
+      background: #B91C1C;
+    }
+
+    /* Toast Notification */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #1C1917;
+      color: #FFFFFF;
+      padding: 12px 18px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-family: 'JetBrains Mono', monospace;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
+      display: none;
+      z-index: 1000;
+      animation: fadeIn 0.2s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Footer */
+    footer {
+      margin-top: 32px;
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-muted);
+      font-family: 'JetBrains Mono', monospace;
+    }
+  </style>
+  <link rel="stylesheet" href="/hermes/assets/ui-enhancements.css?v=3">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="brand-row">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <img src="/hermes/assets/hermes-icon.svg" alt="Hermes" style="width: 22px; height: 22px; border-radius: 5px;">
+          <a href="/hermes/" class="logo-badge" style="text-decoration: none; color: #FFFFFF; font-size: 11px;">← HERMES ROOT</a>
+          <div class="logo-badge">CONTEXT / MEMORY</div>
+        </div>
+        <div class="status-pill">
+          <span class="status-dot"></span>
+          <span>LIVE SYNC READY</span>
+        </div>
+      </div>
+      <h1>Hermes Context &amp; Memory Vault</h1>
+      <p class="subtitle">Pengaturan konteks persisten: Profil Pengguna (USER.md) dan Riwayat Jangka Panjang (MEMORY.md)</p>
+    </header>
+
+    <!-- 2 Main Cards: MEMORY & USER -->
+    <div class="vault-grid">
+      <div class="vault-card active" id="card-memory" onclick="switchTab('memory')">
+        <div class="vault-card-header">
+          <div class="vault-icon">🧠</div>
+          <span class="vault-count" id="count-memory">11 Fakta</span>
+        </div>
+        <div class="vault-title">MEMORY.md</div>
+        <div class="vault-desc">Catatan teknis sistem, aturan server, topologi node, regulasi database, &amp; instruksi operasional.</div>
+        <div class="active-indicator" id="ind-memory">● SEDANG AKTIF</div>
+      </div>
+
+      <div class="vault-card" id="card-user" onclick="switchTab('user')">
+        <div class="vault-card-header">
+          <div class="vault-icon">👤</div>
+          <span class="vault-count" id="count-user">5 Preferensi</span>
+        </div>
+        <div class="vault-title">USER.md</div>
+        <div class="vault-desc">Profil Master, preferensi styling (Warm Paper / Blue Dev), workflow on-chain, &amp; kebiasaan kerja.</div>
+        <div class="active-indicator" id="ind-user" style="display:none;">● SEDANG AKTIF</div>
+      </div>
+    </div>
+
+    <!-- Active List Card -->
+    <div class="content-section">
+      <div class="section-header">
+        <div class="section-title-wrap">
+          <div class="section-title" id="section-title">Daftar Memori (MEMORY.md)</div>
+          <div class="section-meta" id="section-meta">Memuat data...</div>
+        </div>
+        <input type="text" id="search-input" class="search-box" placeholder="masukkan kata pencarian" oninput="filterItems()">
+      </div>
+
+      <div class="item-list" id="items-container">
+        <!-- Rendered by JS -->
+      </div>
+    </div>
+
+    <footer>
+      <span>Endpoint: xxx.tld/hermes/context • Node: Active Gateway</span>
+    </footer>
+  </div>
+
+  <!-- Modal Auth PIN -->
+  <div class="modal-overlay" id="auth-modal" style="display:none;">
+    <div class="modal-card">
+      <div class="modal-title">
+        <span>🔒</span>
+        <span>Autentikasi Vault</span>
+      </div>
+      <div class="modal-desc">
+        Masukkan PIN akses untuk membuka lemari memori Fairy:
+      </div>
+      <div id="auth-error" style="display:none; color:var(--danger-red); font-size:13px; font-weight:600; margin-bottom:12px; font-family:'JetBrains Mono', monospace;"></div>
+      <div style="margin-bottom: 20px;">
+        <input type="password" id="auth-input" class="search-box" style="width:100%; font-size:15px; padding:10px 14px;" placeholder="masukkan PIN" onkeydown="if(event.key==='Enter') submitAuth()">
+      </div>
+      <div class="modal-actions">
+        <button class="btn-confirm-delete" style="background:var(--blue-dev); border-color:var(--blue-dev);" onclick="submitAuth()">Masuk Vault</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Konfirmasi Hapus -->
+  <div class="modal-overlay" id="delete-modal">
+    <div class="modal-card">
+      <div class="modal-title">
+        <span>🗑️</span>
+        <span>Hapus Memori Ini?</span>
+      </div>
+      <div class="modal-desc">
+        Tindakan ini akan menghapus entri dari file fisik di server secara permanen. Backup otomatis tetap dibuat di server.
+      </div>
+      <div class="modal-quote" id="modal-item-preview"></div>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closeModal()">Batal</button>
+        <button class="btn-confirm-delete" id="btn-confirm-exec" onclick="executeDelete()">Hapus Permanen</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast-msg">Notifikasi</div>
+
+  <script>
+    let MEMORY_RAW = [];
+    let USER_RAW = [];
+    let currentTab = 'memory';
+    let pendingDeleteTarget = null;
+    let pendingDeleteIndex = null;
+    let authKey = localStorage.getItem('hermes_pin') || sessionStorage.getItem('memoryAuthKey') || '';
+    const modalHistory = [];
+    function showModal(id) {
+      const modal = document.getElementById(id);
+      if (modal.style.display === 'flex') return;
+      history.pushState({ hermesModal: id }, '', location.href);
+      modalHistory.push(id);
+      modal.style.display = 'flex';
+    }
+    function dismissTopModal(fromBack = false) {
+      const id = modalHistory.pop();
+      if (id) document.getElementById(id).style.display = 'none';
+      if (id && !fromBack) history.back();
+    }
+    window.addEventListener('popstate', () => {
+      if (modalHistory.length) dismissTopModal(true);
+    });
+
+    function detectTag(text, isUser) {
+      const t = text.toLowerCase();
+      if (isUser) {
+        if (t.includes("nama kamu adalah fairy")) return "IDENTITY & ROLE";
+        if (t.includes("shopee")) return "AUTH WORKFLOW";
+        if (t.includes("warm paper") || t.includes("brave cdp")) return "UI & DESIGN PREFERENCE";
+        if (t.includes("on-chain") || t.includes("baw") || t.includes("approval")) return "ON-CHAIN APPROVAL";
+        if (t.includes("dns") || t.includes("notion")) return "NOTION SSoT DNS";
+        return "OPERATOR PREFERENCE";
+      } else {
+        if (t.includes("jangan pernah berbohong") || t.includes("lemari arsip")) return "SSoT & MORAL";
+        if (t.includes("shopee waf")) return "BROWSER CDP";
+        if (t.includes("cue-server")) return "SERVER TOPOLOGY";
+        if (t.includes("topologi hierarkis") || t.includes("parent/guru")) return "HERMES NODE";
+        if (t.includes("portofolio & on-chain tx") || t.includes("baw")) return "BAW / ON-CHAIN";
+        if (t.includes("wake-word") || t.includes("fairy")) return "TELEGRAM";
+        if (t.includes("observe_unmentioned_group_messages")) return "TELEGRAM GATEWAY";
+        if (t.includes("regulasi arsitektur") || t.includes("database di lokal")) return "ARCHITECTURE";
+        if (t.includes("konvensi penamaan")) return "NAMING CONVENTION";
+        if (t.includes("identitas") || t.includes("identity")) return "IDENTITY";
+        if (t.includes("dilarang keras") || t.includes("aturan mutlak")) return "OPERATIONAL RULE";
+        return "SYSTEM NOTE";
+      }
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast-msg');
+      toast.textContent = msg;
+      toast.style.display = 'block';
+      setTimeout(() => {
+        toast.style.display = 'none';
+      }, 3000);
+    }
+
+    function escapeHtml(str) {
+      return str
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function formatText(text) {
+      let escaped = escapeHtml(text);
+      escaped = escaped.replace(/`([^`]+)`/g, '<code>$1</code>');
+      escaped = escaped.replace(/\*([^*]+)\*/g, '<strong>$1</strong>');
+      return escaped;
+    }
+
+    async function loadData() {
+      if (!authKey) {
+        window.location.href = '/hermes/auth/?next=' + encodeURIComponent(window.location.pathname);
+        return;
+      }
+      try {
+        const res = await fetch('/api/memory/data', {
+          headers: { 'X-Memory-Auth': authKey }
+        });
+        if (res.status === 401) {
+          localStorage.removeItem('hermes_pin');
+          sessionStorage.removeItem('memoryAuthKey');
+          authKey = '';
+          window.location.href = '/hermes/auth/?next=' + encodeURIComponent(window.location.pathname);
+          return;
+        }
+        const data = await res.json();
+        if (data.success) {
+          MEMORY_RAW = data.memory || [];
+          USER_RAW = data.user || [];
+          updateUI();
+        }
+      } catch (err) {
+        console.error("Failed to load memory data:", err);
+      }
+    }
+
+    function updateUI() {
+      document.getElementById('count-memory').textContent = `${MEMORY_RAW.length} Fakta`;
+      document.getElementById('count-user').textContent = `${USER_RAW.length} Preferensi`;
+
+      const title = document.getElementById('section-title');
+      const meta = document.getElementById('section-meta');
+
+      if (currentTab === 'memory') {
+        title.textContent = 'Daftar Memori (MEMORY.md)';
+        meta.textContent = `${MEMORY_RAW.length} Entri`;
+        renderList(MEMORY_RAW, false);
+      } else {
+        title.textContent = 'Daftar Profil & Preferensi (USER.md)';
+        meta.textContent = `${USER_RAW.length} Entri`;
+        renderList(USER_RAW, true);
+      }
+    }
+
+    function renderList(rawList, isUser) {
+      const container = document.getElementById('items-container');
+      const q = document.getElementById('search-input').value.toLowerCase().trim();
+
+      const items = rawList.map((text, idx) => ({
+        originalIndex: idx,
+        tag: detectTag(text, isUser),
+        text: text
+      }));
+
+      const filtered = q ? items.filter(i => i.tag.toLowerCase().includes(q) || i.text.toLowerCase().includes(q)) : items;
+
+      if (filtered.length === 0) {
+        container.innerHTML = '<div class="empty-state">Tidak ada memori yang cocok.</div>';
+        return;
+      }
+
+      container.innerHTML = filtered.map(item => `
+        <div class="entry-card">
+          <div class="entry-header">
+            <div class="entry-header-left">
+              <span class="entry-tag">${escapeHtml(item.tag)}</span>
+              <span class="entry-index">#${item.originalIndex + 1}</span>
+            </div>
+            <button class="btn-delete" onclick="promptDelete('${currentTab}', ${item.originalIndex})">
+              <span>✕</span>
+              <span>Hapus</span>
+            </button>
+          </div>
+          <div class="entry-text">${formatText(item.text)}</div>
+        </div>
+      `).join('');
+    }
+
+    function switchTab(tab) {
+      currentTab = tab;
+      const cardMem = document.getElementById('card-memory');
+      const cardUser = document.getElementById('card-user');
+      const indMem = document.getElementById('ind-memory');
+      const indUser = document.getElementById('ind-user');
+      document.getElementById('search-input').value = '';
+
+      if (tab === 'memory') {
+        cardMem.classList.add('active');
+        cardUser.classList.remove('active');
+        indMem.style.display = 'inline-flex';
+        indUser.style.display = 'none';
+      } else {
+        cardUser.classList.add('active');
+        cardMem.classList.remove('active');
+        indUser.style.display = 'inline-flex';
+        indMem.style.display = 'none';
+      }
+      updateUI();
+    }
+
+    function filterItems() {
+      updateUI();
+    }
+
+    function promptAuth(customMsg) {
+      const modal = document.getElementById('auth-modal');
+      const err = document.getElementById('auth-error');
+      if (customMsg) {
+        err.textContent = customMsg;
+        err.style.display = 'block';
+      } else {
+        err.style.display = 'none';
+      }
+      showModal('auth-modal');
+      setTimeout(() => document.getElementById('auth-input').focus(), 100);
+    }
+
+    function submitAuth() {
+      const val = document.getElementById('auth-input').value.trim();
+      if (!val) return;
+      authKey = val;
+      sessionStorage.setItem('memoryAuthKey', val);
+      dismissTopModal();
+      document.getElementById('auth-input').value = '';
+      loadData();
+    }
+
+    function promptDelete(target, idx) {
+      pendingDeleteTarget = target;
+      pendingDeleteIndex = idx;
+      const rawList = target === 'memory' ? MEMORY_RAW : USER_RAW;
+      const text = rawList[idx] || '';
+
+      document.getElementById('modal-item-preview').textContent = text;
+      showModal('delete-modal');
+    }
+
+    function closeModal() {
+      dismissTopModal();
+      pendingDeleteTarget = null;
+      pendingDeleteIndex = null;
+    }
+
+    async function executeDelete() {
+      if (pendingDeleteTarget === null || pendingDeleteIndex === null) return;
+
+      const btn = document.getElementById('btn-confirm-exec');
+      btn.textContent = 'Menghapus...';
+      btn.disabled = true;
+
+      try {
+        const res = await fetch('/api/memory/delete', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Memory-Auth': authKey
+          },
+          body: json_stringify = JSON.stringify({
+            target: pendingDeleteTarget,
+            index: pendingDeleteIndex
+          })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast(`Berhasil menghapus entri #${pendingDeleteIndex + 1}`);
+          closeModal();
+          await loadData();
+        } else {
+          alert('Gagal menghapus: ' + (data.error || 'Unknown error'));
+        }
+      } catch (err) {
+        alert('Error koneksi ke API server: ' + err.message);
+      } finally {
+        btn.textContent = 'Hapus Permanen';
+        btn.disabled = false;
+      }
+    }
+
+    // Init on load
+    document.addEventListener('DOMContentLoaded', () => {
+      loadData();
+      // Auto-poll tiap 3 detik agar real-time saat Fairy nambah/ubah memori
+      setInterval(loadData, 3000);
+    });
+  </script>
+  <script src="/hermes/assets/ui-enhancements.js?v=2"></script>
+</body>
+</html>

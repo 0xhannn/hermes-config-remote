@@ -1,0 +1,10 @@
+__pycache__/
+*.py[cod]
+*$py.class
+*.env
+.env*
+.pin_secret
+state.db
+*.tar.gz
+*.tgz
+.DS_Store
