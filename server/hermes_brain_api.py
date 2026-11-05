@@ -259,15 +259,25 @@ class HermesBrainHandler(http.server.BaseHTTPRequestHandler):
                 hermes_dir = os.path.expanduser("~/.hermes")
                 buf = io.BytesIO()
                 with tarfile.open(fileobj=buf, mode="w:gz") as tar:
-                    cfg_file = os.path.join(hermes_dir, "config.yaml")
-                    if os.path.exists(cfg_file):
-                        tar.add(cfg_file, arcname="config.yaml")
-                    db_file = os.path.join(hermes_dir, "state.db")
-                    if os.path.exists(db_file):
-                        tar.add(db_file, arcname="state.db")
+                    # Config, memory, soul, and skills (exclude heavy runtime cache / state.db 2GB+)
+                    files_to_bundle = [
+                        "config.yaml",
+                        "auth.json",
+                        "SOUL.md",
+                        "USER.md",
+                        "MEMORY.md",
+                        "IDENTITY.md",
+                        "TOOLS.md"
+                    ]
+                    for fname in files_to_bundle:
+                        fpath = os.path.join(hermes_dir, fname)
+                        if os.path.exists(fpath):
+                            tar.add(fpath, arcname=fname)
+
                     mem_dir = os.path.join(hermes_dir, "memories")
                     if os.path.exists(mem_dir):
                         tar.add(mem_dir, arcname="memories")
+
                     skills_dir = os.path.join(hermes_dir, "skills")
                     if os.path.exists(skills_dir):
                         tar.add(skills_dir, arcname="skills")
@@ -275,10 +285,10 @@ class HermesBrainHandler(http.server.BaseHTTPRequestHandler):
                 buf.seek(0)
                 data = buf.read()
                 self.send_response(200)
+                self._send_cors()
                 self.send_header("Content-Type", "application/gzip")
-                self.send_header("Content-Disposition", 'attachment; filename="hermes-backup.tar.gz"')
+                self.send_header("Content-Disposition", 'attachment; filename="hermes-brain-backup.tar.gz"')
                 self.send_header("Content-Length", str(len(data)))
-                self._send_cors_headers()
                 self.end_headers()
                 self.wfile.write(data)
                 return
