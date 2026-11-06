@@ -136,6 +136,26 @@ function cleanupServer(server) {
   try { if (server && server.pid) process.kill(-server.pid, 'SIGKILL'); } catch (_) {}
 }
 
+// Windows: bunuh SEMUA proses yang LISTEN pada port (node + python duplikat)
+// supaya folder npm tidak terkunci saat update. Hanya port target, aman utk 9router.
+function killPortProcesses(port) {
+  if (process.platform !== 'win32') return;
+  try {
+    const { execFileSync } = require('child_process');
+    const out = execFileSync('netstat', ['-ano'], { encoding: 'utf8' });
+    const seen = new Set();
+    for (const line of out.split('\n')) {
+      if (!line.includes(`:${port}`) || !line.includes('LISTENING')) continue;
+      const m = line.match(/\s(\d+)\s*$/);
+      if (m) seen.add(m[1]);
+    }
+    for (const pid of seen) {
+      if (pid === String(process.pid)) continue;
+      try { execFileSync('taskkill', ['/PID', pid, '/F'], { stdio: 'ignore' }); } catch (_) {}
+    }
+  } catch (_) {}
+}
+
 async function main() {
   if (trayMode) {
     // Background mode: spawn backend, keep alive, no menu.
@@ -202,8 +222,20 @@ Pilih menu:`);
       cleanupServer(server);
       process.exit(0);
     } else if (latestVersion && choice === 3) {
+      const ok = await new Promise((resolve) => {
+        const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+        rl.question('\n⚠️  Matikan semua server dulu? Update butuh folder tidak terkunci. (Y/N): ', (ans) => {
+          rl.close();
+          resolve(/^[Yy]$/.test(ans.trim()));
+        });
+      });
+      if (!ok) {
+        console.log('❌ Update dibatalkan.');
+        continue;
+      }
+      killPortProcesses(port);
       console.log(`\n⬆ Update v${CURRENT_VERSION} → v${latestVersion}`);
-      console.log(`Run after exit:\n`);
+      console.log(`Server dimatikan. Run after exit:\n`);
       console.log(`   npm install -g hermes-remote@latest\n`);
       cleanupServer(server);
       process.exit(0);
