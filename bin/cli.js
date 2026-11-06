@@ -74,12 +74,17 @@ function waitServerReady(timeoutMs, intervalMs) {
   });
 }
 
+// CREATE_NO_WINDOW (0x08000000) — mencegah console window baru di Windows
+const NO_WINDOW = process.platform === 'win32' ? 0x08000000 : 0;
+
 function spawnBackend(detached) {
   const pyBin = process.platform === 'win32' ? 'python' : 'python3';
   return spawn(pyBin, [API_SCRIPT], {
     env: { ...process.env, HERMES_HOST: host, HERMES_PORT: String(port), PORT: String(port) },
     detached: !!detached,
-    stdio: detached ? 'ignore' : 'inherit'
+    stdio: detached ? 'ignore' : 'inherit',
+    windowsHide: true,
+    creationFlags: NO_WINDOW
   });
 }
 
@@ -187,6 +192,7 @@ Pilih menu:`);
         detached: true,
         stdio: 'ignore',
         windowsHide: true,
+        creationFlags: NO_WINDOW,
         env: { ...process.env }
       });
       bg.unref();
