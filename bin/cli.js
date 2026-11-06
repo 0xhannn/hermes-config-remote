@@ -78,8 +78,10 @@ const pyProcess = spawn(pyBin, [API_SCRIPT], {
     HERMES_PORT: String(port),
     PORT: String(port)
   },
-  stdio: 'inherit'
+  detached: true,
+  stdio: 'ignore'
 });
+pyProcess.unref();
 
 pyProcess.on('error', (err) => {
   console.error(`❌ Failed to start backend (${pyBin}): ${err.message}`);
@@ -165,7 +167,8 @@ Pilih menu:`);
       } else if (idx === 2) {
         console.log(`💤 CLI ditutup. Backend tetap jalan di ${displayUrl}`);
         console.log(`   Untuk berhenti total, tutup proses hermes-remote/python (Ctrl+C / task manager).`);
-        // keep backend alive, CLI/menu closed
+        // backend sudah detached+unref; exit node biar terminal balik ke prompt
+        process.exit(0);
       } else if (hasUpdate && idx === 3) {
         console.log(`📦 Update tersedia: v${CURRENT_VERSION} → v${latest}`);
         console.log(`   Jalankan: npm install -g hermes-remote@latest`);
