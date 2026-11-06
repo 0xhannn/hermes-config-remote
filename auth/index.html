@@ -25,6 +25,17 @@
 
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
+    /* Hide default scrollbar across all browsers */
+    html, body, .auth-card {
+      scrollbar-width: none; /* Firefox */
+      -ms-overflow-style: none; /* IE/Edge */
+    }
+    html::-webkit-scrollbar,
+    body::-webkit-scrollbar,
+    .auth-card::-webkit-scrollbar {
+      display: none; /* Chrome, Safari, Opera */
+    }
+
     body {
       background-color: var(--bg-page);
       font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
