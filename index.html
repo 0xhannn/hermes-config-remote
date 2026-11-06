@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Hermes Control Center</title>
-  <link rel="icon" type="image/svg+xml" href="/hermes/assets/hermes-icon.svg">
+  <link rel="icon" type="image/svg+xml" href="/assets/hermes-icon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
@@ -268,14 +268,14 @@
       text-align: center;
     }
   </style>
-  <link rel="stylesheet" href="/hermes/assets/ui-enhancements.css?v=3">
+  <link rel="stylesheet" href="/assets/ui-enhancements.css?v=3">
 </head>
 <body>
   <div class="container">
     <header>
       <div class="brand-row">
         <div style="display: flex; align-items: center; gap: 10px;">
-          <img src="/hermes/assets/hermes-icon.svg" alt="Hermes" style="width: 24px; height: 24px; border-radius: 6px;">
+          <img src="/assets/hermes-icon.svg" alt="Hermes" style="width: 24px; height: 24px; border-radius: 6px;">
           <div class="logo-badge">⚡ HERMES AGENTIC AI</div>
         </div>
         <div class="status-pill"><span class="status-dot"></span> LIVE SYSTEM</div>
@@ -288,7 +288,7 @@
       <div class="arch-title">Active Control Modules</div>
       <div class="nav-grid">
         <!-- Module 1: Brain -->
-        <a href="/hermes/brain/" class="nav-module">
+        <a href="/brain/" class="nav-module">
           <div>
             <span class="module-badge badge-brain">🧠 BRAIN RUNTIME</span>
             <div class="module-title">Hermes Brain</div>
@@ -298,7 +298,7 @@
         </a>
 
         <!-- Module 2: Context -->
-        <a href="/hermes/context/" class="nav-module">
+        <a href="/context/" class="nav-module">
           <div>
             <span class="module-badge badge-context">📚 CONTEXT &amp; MEMORY</span>
             <div class="module-title">Hermes Context</div>
@@ -308,7 +308,7 @@
         </a>
 
         <!-- Module 3: Skills -->
-        <a href="/hermes/skills/" class="nav-module">
+        <a href="/skills/" class="nav-module">
           <div>
             <span class="module-badge" style="background: #FEF3C7; color: #92400E; border: 1px solid #FCD34D;">⚡ SKILLS &amp; TOOLS</span>
             <div class="module-title">Hermes Skills</div>
@@ -318,7 +318,7 @@
         </a>
 
         <!-- Module 4: Settings & Data -->
-        <a href="/hermes/settings/" class="nav-module">
+        <a href="/settings/" class="nav-module">
           <div>
             <span class="module-badge" style="background: #E0E7FF; color: #3730A3; border: 1px solid #C7D2FE;">⚙️ SYSTEM SETTINGS</span>
             <div class="module-title">Settings &amp; Backup</div>
@@ -356,26 +356,10 @@
     </footer>
   </div>
 
+  <script src="/assets/auth-guard.js"></script>
   <script>
     window.onload = async () => {
-      const pin = localStorage.getItem('hermes_pin');
-      if (!pin) {
-        window.location.href = '/hermes/auth/?next=' + encodeURIComponent(window.location.pathname);
-        return;
-      }
-      try {
-        const res = await fetch('/api/hermes/auth', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ pin })
-        });
-        const data = await res.json();
-        if (!data.success) {
-          localStorage.removeItem('hermes_pin');
-          window.location.href = '/hermes/auth/?next=' + encodeURIComponent(window.location.pathname);
-          return;
-        }
-      } catch (e) {}
+      if (!(await hermesGuard())) return;
 
       const healthServices = document.getElementById('healthServices');
       const healthMetrics = document.getElementById('healthMetrics');
@@ -393,11 +377,11 @@
       async function refreshHealth() {
         refreshHealthBtn.disabled = true;
         try {
-          const res = await fetch('/api/hermes/system/health', { headers: { 'X-Hermes-PIN': pin } });
+          const res = await fetch('/api/hermes/system/health', { headers: { 'X-Hermes-PIN': localStorage.getItem('hermes_pin') || '' } });
           const data = await res.json();
           if (res.status === 401) {
             localStorage.removeItem('hermes_pin');
-            window.location.href = '/hermes/auth/?next=' + encodeURIComponent(window.location.pathname);
+            window.location.href = '/auth/?next=' + encodeURIComponent(window.location.pathname);
             return;
           }
           if (!res.ok || !data.success) throw new Error(data.error || `HTTP ${res.status}`);
@@ -419,7 +403,7 @@
       setInterval(refreshHealth, 10000);
     };
   </script>
-  <script src="/hermes/assets/ui-enhancements.js?v=2"></script>
+  <script src="/assets/ui-enhancements.js?v=2"></script>
 </body>
 </html>
 <!-- Test Update v1.0.1 -->

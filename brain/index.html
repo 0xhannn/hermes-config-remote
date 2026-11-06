@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Hermes Control Center</title>
-  <link rel="icon" type="image/svg+xml" href="/hermes/assets/hermes-icon.svg">
+  <link rel="icon" type="image/svg+xml" href="/assets/hermes-icon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
@@ -236,15 +236,15 @@
       display: none; z-index: 2000; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     }
   </style>
-  <link rel="stylesheet" href="/hermes/assets/ui-enhancements.css?v=3">
+  <link rel="stylesheet" href="/assets/ui-enhancements.css?v=3">
 </head>
 <body>
   <div class="container">
     <header>
       <div class="brand-row">
         <div style="display: flex; align-items: center; gap: 8px;">
-          <img src="/hermes/assets/hermes-icon.svg" alt="Hermes" style="width: 22px; height: 22px; border-radius: 5px;">
-          <a href="/hermes/" class="logo-badge" style="text-decoration: none; color: #FFFFFF; font-size: 11px;">← HERMES ROOT</a>
+          <img src="/assets/hermes-icon.svg" alt="Hermes" style="width: 22px; height: 22px; border-radius: 5px;">
+          <a href="/" class="logo-badge" style="text-decoration: none; color: #FFFFFF; font-size: 11px;">← HERMES ROOT</a>
           <div class="logo-badge">Hermes Brain v3.0</div>
         </div>
         <div class="status-pill"><span class="status-dot"></span> Live Real-Time SSoT</div>
@@ -282,9 +282,9 @@
             <div class="hero-meta">
               <h3>Ganti Model Aktif</h3>
             </div>
-            <p style="font-size: 12px; color: var(--text-muted); margin: 4px 0 10px;">Pilih dari router lokal atau ketik ID model:</p>
+            <p style="font-size: 12px; color: var(--text-muted); margin: 4px 0 10px;">Pilih model dari daftar atau ketik ID model:</p>
             <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-              <button class="btn btn-secondary btn-sm" onclick="openModelPicker('quick')">Pilih dari 9Router</button>
+              <button class="btn btn-secondary btn-sm" onclick="openModelPicker('quick')">Pilih Model</button>
               <input type="text" id="quickCustomInput" class="form-control" placeholder="masukkan nama model" style="flex: 1; min-width: 140px; padding: 6px 10px; font-size: 13px;">
               <button class="btn btn-sm" onclick="applyQuickSwitch()">Ganti</button>
             </div>
@@ -404,7 +404,7 @@
     function logout() {
       MASTER_PIN = '';
       localStorage.removeItem('hermes_pin');
-      window.location.href = '/hermes/auth/?next=' + encodeURIComponent(window.location.pathname);
+      window.location.href = '/auth/?next=' + encodeURIComponent(window.location.pathname);
     }
 
     async function loadDashboard() {
@@ -512,11 +512,16 @@
       modelPickerProvider = provider;
       const list = document.getElementById('modelPickerList');
       const providerData = APP_STATE?.providers?.find(p => p.name === provider);
-      const models = target === 'quick'
-        ? (APP_STATE?.router_models || [])
-        : (providerData?.models?.length ? providerData.models : (providerData?.model ? [providerData.model] : []));
+      let models;
+      if (target === 'quick') {
+        models = APP_STATE?.router_models?.length
+          ? APP_STATE.router_models
+          : [...new Set((APP_STATE?.providers || []).flatMap(p => p.models || (p.model ? [p.model] : [])))];
+      } else {
+        models = providerData?.models?.length ? providerData.models : (providerData?.model ? [providerData.model] : []);
+      }
       const selectedModel = target === 'quick' ? APP_STATE?.active?.model : providerData?.model;
-      document.getElementById('modelPickerTitle').textContent = target === 'quick' ? 'Pilih Model dari 9Router' : `Pilih Model — ${provider}`;
+      document.getElementById('modelPickerTitle').textContent = target === 'quick' ? 'Pilih Model' : `Pilih Model — ${provider}`;
       list.replaceChildren();
       if (!models.length) {
         const empty = document.createElement('p');
@@ -694,9 +699,16 @@
       document.getElementById('dashboardView').style.display = 'block';
       loadDashboard();
     } else {
-      window.location.href = '/hermes/auth/?next=' + encodeURIComponent(window.location.pathname);
+      (async () => {
+        if (await hermesGuard()) {
+          document.getElementById('authBox').style.display = 'none';
+          document.getElementById('dashboardView').style.display = 'block';
+          loadDashboard();
+        }
+      })();
     }
   </script>
-  <script src="/hermes/assets/ui-enhancements.js?v=2"></script>
+  <script src="/assets/auth-guard.js"></script>
+  <script src="/assets/ui-enhancements.js?v=2"></script>
 </body>
 </html>

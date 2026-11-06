@@ -32,7 +32,74 @@ import time
 
 HEALTH_SERVICES = ("hermes-brain-api.service", "hermes-gateway.service", "nginx.service", "cloudflared.service")
 
+
+def _win32_services():
+    """Windows service/process status via PowerShell (no systemctl)."""
+    services = []
+    procs = {"hermes-gateway.service": "node", "nginx.service": "nginx.exe", "cloudflared.service": "cloudflared.exe"}
+    try:
+        raw = subprocess.check_output(
+            ["powershell", "-NoProfile", "-Command", "Get-Process | Select-Object -ExpandProperty ProcessName"],
+            text=True, timeout=5,
+        )
+        running = {line.strip().lower() for line in raw.splitlines() if line.strip()}
+    except Exception:
+        running = set()
+    for unit, proc in procs.items():
+        try:
+            active = "active" if proc.lower() in running else "inactive"
+            services.append({"unit": unit, "load": "loaded", "active": active, "sub": "running" if active == "active" else "dead",
+                             "pid": 0, "restarts": 0, "since": ""})
+        except Exception as exc:
+            services.append({"unit": unit, "load": "unknown", "active": "unknown", "sub": "unknown",
+                             "pid": 0, "restarts": 0, "error": str(exc)})
+    # hermes-brain-api = backend ini sendiri (jalan)
+    services.insert(0, {"unit": "hermes-brain-api.service", "load": "loaded", "active": "active",
+                        "sub": "running", "pid": os.getpid(), "restarts": 0, "since": ""})
+    return services
+
+
+def _win32_resources():
+    try:
+        ps = (
+            "Get-CimInstance Win32_OperatingSystem | "
+            "Select-Object TotalVisibleMemorySize,FreePhysicalMemory,LocalDateTime | ConvertTo-Json"
+        )
+        raw = subprocess.check_output(["powershell", "-NoProfile", "-Command", ps], text=True, timeout=5)
+        ops = json.loads(raw)
+        total_mb = int(ops.get("TotalVisibleMemorySize", 0) or 0) // 1024
+        avail_mb = int(ops.get("FreePhysicalMemory", 0) or 0) // 1024
+        percent = round((total_mb - avail_mb) / total_mb * 100, 1) if total_mb else 0
+        memory = {"total_mb": total_mb, "available_mb": avail_mb, "percent": percent}
+    except Exception:
+        memory = {"total_mb": 0, "available_mb": 0, "percent": 0}
+    try:
+        disk = shutil.disk_usage(os.environ.get("SystemDrive", "C:"))
+        disk = {"free_bytes": disk.free, "total_bytes": disk.total,
+                "percent": round(disk.used / disk.total * 100, 1) if disk.total else 0}
+    except Exception:
+        disk = {"free_bytes": 0, "total_bytes": 0, "percent": 0}
+    cpu_percent, load, uptime_seconds = None, [], 0
+    try:
+        cpu = subprocess.check_output(
+            ["powershell", "-NoProfile", "-Command",
+             "Get-Counter '\\Processor(_Total)\\% Processor Time' -SampleInterval 1 -MaxSamples 2 | Select-Object -ExpandProperty CounterSamples | Select-Object -Last 1 -ExpandProperty CookedValue"],
+            text=True, timeout=8,
+        )
+        cpu_percent = round(float(cpu.strip().splitlines()[-1].strip()), 1)
+    except Exception:
+        cpu_percent = None
+    return {"cpu_percent": cpu_percent, "load_average": load, "memory": memory,
+            "disk": disk, "uptime_seconds": uptime_seconds}
+
+
 def get_system_health():
+    if sys.platform == "win32":
+        services = _win32_services()
+        resources = _win32_resources()
+        return {"success": True, "timestamp": datetime.now().astimezone().isoformat(timespec="seconds"),
+                "services": services, "resources": resources}
+
     services = []
     for unit in HEALTH_SERVICES:
         try:
@@ -82,8 +149,14 @@ HOST = os.environ.get("HERMES_HOST", "0.0.0.0")
 PORT = int(os.environ.get("PORT", os.environ.get("HERMES_PORT", 8093)))
 HERMES_WEB_DIR = os.environ.get("HERMES_WEB_DIR", os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 HERMES_REPO_BRANCH = os.environ.get("HERMES_REPO_BRANCH", "main")
-CONFIG_PATH = os.environ.get("HERMES_CONFIG_PATH", os.path.expanduser("~/.hermes/config.yaml"))
-PIN_FILE = os.path.expanduser("~/.hermes/.pin_secret")
+def _hermes_config_dir():
+    if sys.platform == "win32":
+        local = os.environ.get("LOCALAPPDATA", os.path.expanduser("~\\AppData\\Local"))
+        return os.path.join(local, "hermes")
+    return os.path.expanduser("~/.hermes")
+
+CONFIG_PATH = os.environ.get("HERMES_CONFIG_PATH", os.path.join(_hermes_config_dir(), "config.yaml"))
+PIN_FILE = os.path.join(_hermes_config_dir(), ".pin_secret")
 
 def get_current_pin():
     if os.path.exists(PIN_FILE):
@@ -123,6 +196,155 @@ def save_yaml(data):
     with open(CONFIG_PATH, "w", encoding="utf-8") as f:
         f.write(json.dumps(data, ensure_ascii=False, indent=2))
 
+
+def _apply_cli_config(changes):
+    """Sync config to Hermes via official CLI (source of truth) so it
+    takes effect live. changes: dict of 'key' -> value (e.g. model.default).
+    Returns (ok, detail)."""
+    if not changes:
+        return True, "no changes"
+    try:
+        for key, val in changes.items():
+            subprocess.run(
+                ["hermes", "config", "set", key, str(val)],
+                capture_output=True, text=True, timeout=20)
+        return True, "cli synced"
+    except Exception as e:
+        return False, f"cli sync failed: {e}"
+
+
+def _skills_root():
+    return os.path.join(_hermes_config_dir(), "skills")
+
+
+def _skill_md_path(skill_dir):
+    p = os.path.join(skill_dir, "SKILL.md")
+    return p if os.path.exists(p) else skill_dir
+
+
+def _skill_name_from_dir(skill_dir):
+    return os.path.basename(skill_dir.rstrip(os.sep))
+
+
+def _parse_skill_md(path):
+    """Return (name, category, description) from a SKILL.md file."""
+    base = os.path.basename(path)
+    # if inside a subfolder named <skill>/SKILL.md, use folder name
+    parent_is_skill_dir = base == "SKILL.md"
+    if parent_is_skill_dir:
+        name = os.path.basename(os.path.dirname(path))
+        category = os.path.basename(os.path.dirname(os.path.dirname(path)))
+    else:
+        name = os.path.splitext(base)[0]
+        category = os.path.basename(os.path.dirname(path))
+    description = ""
+    try:
+        with open(path, "r", encoding="utf-8", errors="replace") as f:
+            lines = f.read().splitlines()
+        # skip yaml frontmatter
+        if lines and lines[0].strip() == "---":
+            i = 1
+            while i < len(lines) and lines[i].strip() != "---":
+                i += 1
+            # frontmatter is lines[1:i]; find description key
+            for fm in lines[1:i]:
+                if fm.strip().lower().startswith("description:"):
+                    description = fm.split(":", 1)[1].strip()
+                    break
+            body_start = i + 1
+        else:
+            body_start = 0
+        if not description:
+            for ln in lines[body_start:]:
+                s = ln.strip()
+                if s and not s.startswith("#"):
+                    description = s
+                    break
+                if s:
+                    description = s.lstrip("# ").strip()
+                    break
+    except Exception:
+        description = ""
+    return name, category, description
+
+
+def skills_list_crossplatform():
+    skills = []
+    root = _skills_root()
+    if os.path.isdir(root):
+        for cat in sorted(os.listdir(root)):
+            cat_path = os.path.join(root, cat)
+            if not os.path.isdir(cat_path):
+                continue
+            for entry in sorted(os.listdir(cat_path)):
+                entry_path = os.path.join(cat_path, entry)
+                if os.path.isdir(entry_path):
+                    md = _skill_md_path(entry_path)
+                    if os.path.isfile(md):
+                        name, _, desc = _parse_skill_md(md)
+                        skills.append({"name": name or entry, "category": cat, "description": desc})
+                elif entry.endswith(".md"):
+                    name, _, desc = _parse_skill_md(entry_path)
+                    skills.append({"name": name or entry, "category": cat, "description": desc})
+    return skills
+
+
+def skill_view_crossplatform(name):
+    root = _skills_root()
+    if os.path.isdir(root):
+        for cat in os.listdir(root):
+            cat_path = os.path.join(root, cat)
+            if not os.path.isdir(cat_path):
+                continue
+            for entry in os.listdir(cat_path):
+                entry_path = os.path.join(cat_path, entry)
+                if entry == name or entry == name + ".md" or entry == name + "/":
+                    md = _skill_md_path(entry_path) if os.path.isdir(entry_path) else entry_path
+                    if os.path.isfile(md):
+                        with open(md, "r", encoding="utf-8", errors="replace") as f:
+                            return {"success": True, "name": name, "content": f.read()}
+                    return {"success": False, "error": f"Skill '{name}' file SKILL.md tidak ditemukan"}
+    return {"success": False, "error": f"Skill '{name}' tidak ditemukan"}
+
+
+def _find_skill_dir(name):
+    root = _skills_root()
+    if os.path.isdir(root):
+        for cat in os.listdir(root):
+            cat_path = os.path.join(root, cat)
+            if not os.path.isdir(cat_path):
+                continue
+            for entry in os.listdir(cat_path):
+                entry_path = os.path.join(cat_path, entry)
+                if entry == name:
+                    return entry_path if os.path.isdir(entry_path) else None
+                if entry == name + ".md":
+                    return None
+    return None
+
+
+def skill_save_crossplatform(name, content, category=None, is_new=False):
+    root = _skills_root()
+    os.makedirs(root, exist_ok=True)
+    existing = _find_skill_dir(name) if not is_new else None
+    if existing:
+        target_dir = existing
+    else:
+        cat_name = category or "custom"
+        target_dir = os.path.join(root, cat_name, name)
+        os.makedirs(target_dir, exist_ok=True)
+    with open(os.path.join(target_dir, "SKILL.md"), "w", encoding="utf-8") as f:
+        f.write(content)
+    return {"success": True, "message": f"Skill '{name}' berhasil disimpan"}
+
+
+def skill_delete_crossplatform(name):
+    existing = _find_skill_dir(name)
+    if not existing:
+        return {"success": False, "error": f"Skill '{name}' tidak ditemukan"}
+    shutil.rmtree(existing, ignore_errors=True)
+    return {"success": True, "message": f"Skill '{name}' berhasil dihapus"}
+
 class HermesBrainHandler(http.server.BaseHTTPRequestHandler):
     def _send_cors(self):
         self.send_header("Access-Control-Allow-Origin", "*")
@@ -139,17 +361,26 @@ class HermesBrainHandler(http.server.BaseHTTPRequestHandler):
         pin_hdr = self.headers.get("X-Hermes-PIN") or self.headers.get("X-Hermes-Key")
         if pin_hdr == current_pin:
             return True
+        # cookie session fallback (persist lintas halaman tanpa localStorage)
+        cookies = self.headers.get("Cookie") or ""
+        for part in cookies.split(";"):
+            part = part.strip()
+            if part.startswith("hermes_pin="):
+                if part.split("=", 1)[1] == current_pin:
+                    return True
         query = urllib.parse.urlparse(self.path).query
         params = urllib.parse.parse_qs(query)
         if params.get("pin", [""])[0] == current_pin:
             return True
         return False
 
-    def _send_json(self, status, payload):
+    def _send_json(self, status, payload, set_cookie=None):
         body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
         self.send_response(status)
         self._send_cors()
         self.send_header("Content-Type", "application/json; charset=utf-8")
+        if set_cookie:
+            self.send_header("Set-Cookie", set_cookie)
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         self.wfile.write(body)
@@ -250,8 +481,8 @@ class HermesBrainHandler(http.server.BaseHTTPRequestHandler):
                         "has_key": bool(p_key)
                     })
 
-                # Also read authenticated providers from /root/.hermes/auth.json (OAuth / built-ins like openai-codex, copilot)
-                auth_path = "/root/.hermes/auth.json"
+                # Also read authenticated providers from hermes config dir auth.json (OAuth / built-ins like openai-codex, copilot)
+                auth_path = os.path.join(_hermes_config_dir(), "auth.json")
                 if os.path.exists(auth_path):
                     try:
                         with open(auth_path, "r", encoding="utf-8") as af:
@@ -324,6 +555,26 @@ class HermesBrainHandler(http.server.BaseHTTPRequestHandler):
                 except Exception:
                     pass
 
+                # Ensure the active provider is always listed (model installed => provider must exist)
+                _real_provider = active_provider not in ("", "custom", "default")
+                if active_model and _real_provider and not any(p.get("name") == active_provider for p in clean_providers):
+                    known = {
+                        "nous": ("https://inference-api.nousresearch.com/v1", ["upstage/solar-mini4:free"]),
+                        "openai": ("https://api.openai.com/v1", []),
+                        "anthropic": ("https://api.anthropic.com/v1", []),
+                        "google": ("https://generativelanguage.googleapis.com/v1beta", []),
+                    }
+                    base, mlist = known.get(active_provider, (active_base_url, [active_model]))
+                    clean_providers.append({
+                        "name": active_provider,
+                        "type": "custom",
+                        "base_url": base,
+                        "model": active_model,
+                        "models": mlist or [active_model],
+                        "api_mode": model_cfg.get("api_mode", "chat_completions"),
+                        "has_key": True,
+                    })
+
                 return self._send_json(200, {
                     "success": True,
                     "active": {
@@ -339,13 +590,7 @@ class HermesBrainHandler(http.server.BaseHTTPRequestHandler):
 
         if parsed.path.rstrip("/") == "/api/hermes/skills":
             try:
-                import sys
-                if "/usr/local/lib/hermes-agent" not in sys.path:
-                    sys.path.insert(0, "/usr/local/lib/hermes-agent")
-                from tools.skills_tool import skills_list
-                res_str = skills_list()
-                res_data = json.loads(res_str)
-                return self._send_json(200, res_data)
+                return self._send_json(200, {"success": True, "skills": skills_list_crossplatform()})
             except Exception as e:
                 return self._send_json(500, {"success": False, "error": str(e)})
 
@@ -355,19 +600,13 @@ class HermesBrainHandler(http.server.BaseHTTPRequestHandler):
                 skill_name = q.get("name", [""])[0]
                 if not skill_name:
                     return self._send_json(400, {"success": False, "error": "Query param 'name' required"})
-                import sys
-                if "/usr/local/lib/hermes-agent" not in sys.path:
-                    sys.path.insert(0, "/usr/local/lib/hermes-agent")
-                from tools.skills_tool import skill_view
-                res_str = skill_view(name=skill_name)
-                res_data = json.loads(res_str)
-                return self._send_json(200, res_data)
+                return self._send_json(200, skill_view_crossplatform(skill_name))
             except Exception as e:
                 return self._send_json(500, {"success": False, "error": str(e)})
 
         if parsed.path.rstrip("/") == "/api/hermes/backup/export":
             try:
-                hermes_dir = os.path.expanduser("~/.hermes")
+                hermes_dir = _hermes_config_dir()
                 q = urllib.parse.parse_qs(parsed.query)
                 # Filter item modular: items=persona,memory,skills,config
                 # selected_skills=skill1,skill2
@@ -483,7 +722,8 @@ class HermesBrainHandler(http.server.BaseHTTPRequestHandler):
             pin = body.get("pin", "")
             current_pin = get_current_pin()
             if pin == current_pin:
-                return self._send_json(200, {"success": True, "message": "Auth OK"})
+                cookie = f"hermes_pin={current_pin}; Path=/; HttpOnly; SameSite=Lax"
+                return self._send_json(200, {"success": True, "message": "Auth OK"}, set_cookie=cookie)
             return self._send_json(401, {"success": False, "error": "PIN tidak valid"})
 
         if not self._check_auth():
@@ -539,9 +779,17 @@ class HermesBrainHandler(http.server.BaseHTTPRequestHandler):
                         break
 
             save_yaml(cfg)
+            # Live-sync to Hermes CLI so the change takes effect immediately
+            cli_ok, cli_detail = _apply_cli_config({
+                "model.default": target_model,
+                "model.provider": target_provider,
+                "model.base_url": cfg["model"].get("base_url") or "",
+            })
             return self._send_json(200, {
                 "success": True,
                 "message": f"Model aktif berhasil diganti ke {target_model} (Provider: {cfg['model'].get('provider')})",
+                "cli": cli_ok,
+                "cli_detail": cli_detail,
                 "active": {
                     "model": cfg["model"]["default"],
                     "provider": cfg["model"].get("provider"),
@@ -635,14 +883,7 @@ class HermesBrainHandler(http.server.BaseHTTPRequestHandler):
                 return self._send_json(400, {"success": False, "error": "Nama skill dan konten wajib diisi"})
 
             try:
-                import sys
-                if "/usr/local/lib/hermes-agent" not in sys.path:
-                    sys.path.insert(0, "/usr/local/lib/hermes-agent")
-                from tools.skill_manager_tool import skill_manage
-                action = "create" if is_new else "edit"
-                res_str = skill_manage(action=action, name=name, content=content, category=category)
-                res_data = json.loads(res_str)
-                return self._send_json(200, res_data)
+                return self._send_json(200, skill_save_crossplatform(name, content, category, is_new))
             except Exception as e:
                 return self._send_json(500, {"success": False, "error": str(e)})
 
@@ -652,13 +893,7 @@ class HermesBrainHandler(http.server.BaseHTTPRequestHandler):
                 return self._send_json(400, {"success": False, "error": "Nama skill wajib diisi"})
 
             try:
-                import sys
-                if "/usr/local/lib/hermes-agent" not in sys.path:
-                    sys.path.insert(0, "/usr/local/lib/hermes-agent")
-                from tools.skill_manager_tool import skill_manage
-                res_str = skill_manage(action="delete", name=name)
-                res_data = json.loads(res_str)
-                return self._send_json(200, res_data)
+                return self._send_json(200, skill_delete_crossplatform(name))
             except Exception as e:
                 return self._send_json(500, {"success": False, "error": str(e)})
 
@@ -775,7 +1010,7 @@ class HermesBrainHandler(http.server.BaseHTTPRequestHandler):
                     raw_b64 = raw_b64.split(",", 1)[1]
                 tar_bytes = base64.b64decode(raw_b64)
                 
-                hermes_dir = os.path.expanduser("~/.hermes")
+                hermes_dir = _hermes_config_dir()
                 buf = io.BytesIO(tar_bytes)
                 with tarfile.open(fileobj=buf, mode="r:*") as tar:
                     for member in tar.getmembers():

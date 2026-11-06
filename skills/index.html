@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Hermes Control Center</title>
-  <link rel="icon" type="image/svg+xml" href="/hermes/assets/hermes-icon.svg">
+  <link rel="icon" type="image/svg+xml" href="/assets/hermes-icon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
@@ -374,15 +374,15 @@
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     }
   </style>
-  <link rel="stylesheet" href="/hermes/assets/ui-enhancements.css?v=3">
+  <link rel="stylesheet" href="/assets/ui-enhancements.css?v=3">
 </head>
 <body>
   <div class="container">
     <header>
       <div class="brand-row">
         <div style="display: flex; align-items: center; gap: 8px;">
-          <img src="/hermes/assets/hermes-icon.svg" alt="Hermes" style="width: 22px; height: 22px; border-radius: 5px;">
-          <a href="/hermes/" class="logo-badge" style="text-decoration: none; color: #FFFFFF; font-size: 11px;">← HERMES ROOT</a>
+          <img src="/assets/hermes-icon.svg" alt="Hermes" style="width: 22px; height: 22px; border-radius: 5px;">
+          <a href="/" class="logo-badge" style="text-decoration: none; color: #FFFFFF; font-size: 11px;">← HERMES ROOT</a>
           <div class="logo-badge">HERMES SKILLS</div>
         </div>
         <div class="status-pill"><span class="status-dot"></span> LIVE AUDIT</div>
@@ -656,14 +656,16 @@
     }
 
     // Auto auth if PIN exists
-    window.onload = () => {
+    window.onload = async () => {
       if (AUTH_PIN) {
         initDashboard();
       } else {
-        window.location.href = '/hermes/auth/?next=' + encodeURIComponent(window.location.pathname);
+        const ok = await hermesGuard();
+        if (ok) initDashboard();
       }
     };
   </script>
-  <script src="/hermes/assets/ui-enhancements.js?v=2"></script>
+  <script src="/assets/auth-guard.js"></script>
+  <script src="/assets/ui-enhancements.js?v=2"></script>
 </body>
 </html>

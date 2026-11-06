@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Hermes Control Center</title>
-  <link rel="icon" type="image/svg+xml" href="/hermes/assets/hermes-icon.svg">
+  <link rel="icon" type="image/svg+xml" href="/assets/hermes-icon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
@@ -160,12 +160,12 @@
       font-family: 'JetBrains Mono', monospace;
     }
   </style>
-  <link rel="stylesheet" href="/hermes/assets/ui-enhancements.css?v=3">
+  <link rel="stylesheet" href="/assets/ui-enhancements.css?v=3">
 </head>
 <body>
   <div class="auth-card">
     <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 12px;">
-      <img src="/hermes/assets/hermes-icon.svg" alt="Hermes" style="width: 24px; height: 24px; border-radius: 6px;">
+      <img src="/assets/hermes-icon.svg" alt="Hermes" style="width: 24px; height: 24px; border-radius: 6px;">
       <div class="logo-badge" style="margin-bottom: 0;">⚡ HERMES GATEWAY</div>
     </div>
     <div style="font-size: 40px; margin-bottom: 12px;">🔒</div>
@@ -209,7 +209,7 @@
           localStorage.setItem('hermes_pin', pin);
           // Ambil return target jika ada
           const params = new URLSearchParams(window.location.search);
-          const next = params.get('next') || '/hermes/';
+          const next = params.get('next') || '/';
           window.location.href = next;
         } else {
           err.innerText = data.error || 'PIN Salah!';
@@ -237,13 +237,13 @@
           const data = await res.json();
           if (data.success) {
             const params = new URLSearchParams(window.location.search);
-            const next = params.get('next') || '/hermes/';
+            const next = params.get('next') || '/';
             window.location.href = next;
           }
         } catch (e) {}
       }
     };
   </script>
-  <script src="/hermes/assets/ui-enhancements.js?v=2"></script>
+  <script src="/assets/ui-enhancements.js?v=2"></script>
 </body>
 </html>
