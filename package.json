@@ -3,6 +3,18 @@
   "version": "1.0.0",
   "description": "Full-spectrum local-first web control center and system manager for Hermes Agent",
   "main": "bin/cli.js",
+  "files": [
+    "bin/",
+    "server/",
+    "assets/",
+    "auth/",
+    "brain/",
+    "context/",
+    "skills/",
+    "settings/",
+    "index.html",
+    "README.md"
+  ],
   "bin": {
     "hermes-remote": "bin/cli.js"
   },
