@@ -1,151 +1,166 @@
 #!/usr/bin/env node
 
 /**
- * hermes-remote CLI runner
- * Pure Node.js stdlib (Zero extra npm dependencies)
+ * hermes-remote CLI runner — flow mengikuti 9router:
+ * spawn backend detached → waitServerReady → menu loop → hide spawn ulang --tray
+ * Pure Node.js stdlib (zero extra npm dependencies)
  */
 
 const http = require('http');
 const https = require('https');
-const fs = require('fs');
 const path = require('path');
+const net = require('net');
 const { spawn } = require('child_process');
 const readline = require('readline');
 
 const args = process.argv.slice(2);
 
-function printHelp() {
-  console.log(`
+let port = 8093;
+let host = '0.0.0.0';
+let trayMode = false;
+let skipUpdate = false;
+
+for (let i = 0; i < args.length; i++) {
+  const arg = args[i];
+  if (arg === '-h' || arg === '--help') {
+    console.log(`
 ⚡ hermes-remote — Web Control Center for Hermes Agent
 
 Usage:
-  npx hermes-remote [options]
   hermes-remote [options]
 
 Options:
   -p, --port <number>    Port to listen on (default: 8093)
   --host <string>        Host interface to bind (default: 0.0.0.0)
-  --no-open              Do not automatically open browser
+  -t, --tray             Run in background (tray) mode
+  --skip-update          Skip update check
   -h, --help             Show this help menu
   -v, --version          Show version
 
 Default Credentials:
   Master PIN: 123456 (or existing ~/.hermes/.pin_secret)
 `);
-}
-
-let port = 8093;
-let host = '0.0.0.0';
-let autoOpen = true;
-
-for (let i = 0; i < args.length; i++) {
-  const arg = args[i];
-  if (arg === '-h' || arg === '--help') {
-    printHelp();
     process.exit(0);
   }
   if (arg === '-v' || arg === '--version') {
-    const pkg = require('../package.json');
-    console.log(`v${pkg.version}`);
+    console.log(`v${require('../package.json').version}`);
     process.exit(0);
   }
-  if (arg === '-p' || arg === '--port') {
-    port = parseInt(args[++i], 10) || 8093;
-  }
-  if (arg === '--host') {
-    host = args[++i] || '0.0.0.0';
-  }
-  if (arg === '--no-open') {
-    autoOpen = false;
-  }
+  if (arg === '-p' || arg === '--port') port = parseInt(args[++i], 10) || 8093;
+  if (arg === '--host') host = args[++i] || '0.0.0.0';
+  if (arg === '-t' || arg === '--tray') { trayMode = true; process.env.TRAY_MODE = '1'; }
+  if (arg === '--skip-update') skipUpdate = true;
 }
 
+const pkg = require('../package.json');
+const CURRENT_VERSION = pkg.version;
 const ROOT_DIR = path.resolve(__dirname, '..');
 const API_SCRIPT = path.join(ROOT_DIR, 'server', 'hermes_brain_api.py');
 const displayUrl = `http://${host === '0.0.0.0' ? 'localhost' : host}:${port}/hermes/`;
 
-const pkg = require('../package.json');
-const CURRENT_VERSION = pkg.version;
+// Poll until server accepts TCP, or timeout
+function waitServerReady(timeoutMs, intervalMs) {
+  const deadline = Date.now() + timeoutMs;
+  return new Promise((resolve) => {
+    const tryConnect = () => {
+      const s = net.connect({ host: '127.0.0.1', port }, () => { s.destroy(); resolve(true); });
+      s.on('error', () => {
+        s.destroy();
+        if (Date.now() >= deadline) return resolve(false);
+        setTimeout(tryConnect, intervalMs);
+      });
+    };
+    tryConnect();
+  });
+}
 
-// 1. Start Python Backend API
-console.log(`⚡ Starting Hermes Remote Control Center...`);
-
-const pyBin = process.platform === 'win32' ? 'python' : 'python3';
-const pyProcess = spawn(pyBin, [API_SCRIPT], {
-  env: {
-    ...process.env,
-    HERMES_HOST: host,
-    HERMES_PORT: String(port),
-    PORT: String(port)
-  },
-  detached: true,
-  stdio: 'ignore'
-});
-pyProcess.unref();
-
-pyProcess.on('error', (err) => {
-  console.error(`❌ Failed to start backend (${pyBin}): ${err.message}`);
-  console.error(`Ensure python is installed and available in your PATH.`);
-  process.exit(1);
-});
-
-pyProcess.on('exit', (code) => {
-  if (code !== 0 && code !== null) {
-    console.error(`Backend process exited with code ${code}`);
-  }
-  process.exit(0);
-});
-
-// Clean exit handlers
-process.on('SIGINT', () => {
-  pyProcess.kill('SIGINT');
-  process.exit(0);
-});
-process.on('SIGTERM', () => {
-  pyProcess.kill('SIGTERM');
-  process.exit(0);
-});
+function spawnBackend(detached) {
+  const pyBin = process.platform === 'win32' ? 'python' : 'python3';
+  return spawn(pyBin, [API_SCRIPT], {
+    env: { ...process.env, HERMES_HOST: host, HERMES_PORT: String(port), PORT: String(port) },
+    detached: !!detached,
+    stdio: detached ? 'ignore' : 'inherit'
+  });
+}
 
 function openBrowser() {
+  const url = displayUrl;
   try {
-    let openCmd, openArgs;
-    if (process.platform === 'win32') {
-      openCmd = 'cmd';
-      openArgs = ['/c', 'start', '', displayUrl];
-    } else if (process.platform === 'darwin') {
-      openCmd = 'open';
-      openArgs = [displayUrl];
-    } else {
-      openCmd = 'xdg-open';
-      openArgs = [displayUrl];
-    }
-    spawn(openCmd, openArgs, { detached: true, stdio: 'ignore' }).unref();
-    console.log(`🌐 Browser opened → ${displayUrl}`);
+    let cmd, cmdArgs;
+    if (process.platform === 'win32') { cmd = 'cmd'; cmdArgs = ['/c', 'start', '', url]; }
+    else if (process.platform === 'darwin') { cmd = 'open'; cmdArgs = [url]; }
+    else { cmd = 'xdg-open'; cmdArgs = [url]; }
+    spawn(cmd, cmdArgs, { detached: true, stdio: 'ignore' }).unref();
+    console.log(`🌐 Browser opened → ${url}`);
   } catch (_) {
-    console.log(`📋 Open manually: ${displayUrl}`);
+    console.log(`📋 Open manually: ${url}`);
   }
 }
 
-function fetchLatestVersion(cb) {
-  https.get('https://registry.npmjs.org/hermes-remote/latest', (res) => {
-    let body = '';
-    res.on('data', (c) => (body += c));
-    res.on('end', () => {
-      try { cb(JSON.parse(body).version); } catch (_) { cb(null); }
-    });
-  }).on('error', () => cb(null));
+function pause(prompt) {
+  return new Promise((resolve) => {
+    const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+    rl.question(prompt, () => { rl.close(); resolve(); });
+  });
 }
 
-function showMenu() {
-  fetchLatestVersion((latest) => {
-    const hasUpdate = latest && latest !== CURRENT_VERSION;
-    const rl = readline.createInterface({
-      input: process.stdin,
-      output: process.stdout
+function checkForUpdate() {
+  return new Promise((resolve) => {
+    if (skipUpdate) return resolve(null);
+    let resolved = false;
+    const safety = setTimeout(() => { if (!resolved) { resolved = true; resolve(null); } }, 8000);
+    const done = (v) => { if (!resolved) { resolved = true; clearTimeout(safety); resolve(v); } };
+    const req = https.get('https://registry.npmjs.org/hermes-remote/latest', { timeout: 3000 }, (res) => {
+      let data = '';
+      res.on('data', (c) => (data += c));
+      res.on('end', () => {
+        try {
+          const latest = JSON.parse(data);
+          if (latest.version && latest.version !== CURRENT_VERSION) done(latest.version);
+          else done(null);
+        } catch (_) { done(null); }
+      });
     });
+    req.on('error', () => done(null));
+    req.on('timeout', () => { req.destroy(); done(null); });
+  });
+}
 
+function cleanupServer(server) {
+  try { if (server && server.pid) server.kill('SIGKILL'); } catch (_) {}
+  try { if (server && server.pid) process.kill(-server.pid, 'SIGKILL'); } catch (_) {}
+}
+
+async function main() {
+  if (trayMode) {
+    // Background mode: spawn backend, keep alive, no menu.
+    const backend = spawnBackend(true);
+    backend.unref();
+    console.log(`🚀 hermes-remote v${CURRENT_VERSION} (background)`);
+    console.log(`Server: ${displayUrl}`);
+    console.log(`💡 Backend running. Close this terminal window safely; it stays alive.`);
+    // Keep event loop alive
+    setInterval(() => {}, 1000);
+    return;
+  }
+
+  // Foreground: spawn backend as child of THIS process (non-detached) so we control it.
+  const server = spawnBackend(false);
+
+  server.on('error', (err) => {
+    console.error(`❌ Failed to start backend: ${err.message}`);
+    process.exit(1);
+  });
+
+  const updatePromise = checkForUpdate();
+
+  await waitServerReady(15000, 150);
+
+  const latestVersion = await updatePromise;
+
+  while (true) {
     const items = ['Open Web UI', 'Hide to Tray'];
-    if (hasUpdate) items.push(`Update (v${latest})`);
+    if (latestVersion) items.push(`Update (v${latestVersion})`);
     items.push('Exit');
 
     console.log(`
@@ -156,34 +171,44 @@ function showMenu() {
 
 Pilih menu:`);
     items.forEach((label, i) => console.log(`  [${i + 1}] ${label}`));
-    console.log('');
 
-    rl.question('Pilihan: ', (ans) => {
-      const idx = parseInt(ans.trim(), 10);
-      rl.close();
-      if (idx === 1) {
-        openBrowser();
-        showMenu();
-      } else if (idx === 2) {
-        console.log(`💤 CLI ditutup. Backend tetap jalan di ${displayUrl}`);
-        console.log(`   Untuk berhenti total, tutup proses hermes-remote/python (Ctrl+C / task manager).`);
-        // backend sudah detached+unref; exit node biar terminal balik ke prompt
-        process.exit(0);
-      } else if (hasUpdate && idx === 3) {
-        console.log(`📦 Update tersedia: v${CURRENT_VERSION} → v${latest}`);
-        console.log(`   Jalankan: npm install -g hermes-remote@latest`);
-        showMenu();
-      } else if (idx === items.length) {
-        console.log(`👋 Keluar.`);
-        pyProcess.kill('SIGINT');
-        process.exit(0);
-      } else {
-        console.log(`❌ Pilihan tidak valid.`);
-        showMenu();
-      }
+    const choice = await new Promise((resolve) => {
+      const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+      rl.question('\nPilihan: ', (ans) => { rl.close(); resolve(parseInt(ans.trim(), 10)); });
     });
-  });
+
+    if (choice === 1) {
+      openBrowser();
+      await pause('\nPress Enter to go back to menu...');
+    } else if (choice === 2) {
+      // Hide to Tray: spawn ulang --tray detached, kill backend lama, exit → terminal balik.
+      console.log('\n⏳ Starting background process...');
+      const bg = spawn(process.execPath, [__filename, '--tray', '--skip-update', '-p', String(port)], {
+        detached: true,
+        stdio: 'ignore',
+        windowsHide: true,
+        env: { ...process.env }
+      });
+      bg.unref();
+      console.log(`🔔 hermes-remote running in background (PID: ${bg.pid})`);
+      console.log(`   Server: ${displayUrl}`);
+      console.log(`\n💡 You can close this terminal. Backend stays alive.\n`);
+      cleanupServer(server);
+      process.exit(0);
+    } else if (latestVersion && choice === 3) {
+      console.log(`\n⬆ Update v${CURRENT_VERSION} → v${latestVersion}`);
+      console.log(`Run after exit:\n`);
+      console.log(`   npm install -g hermes-remote@latest\n`);
+      cleanupServer(server);
+      process.exit(0);
+    } else if (choice === items.length) {
+      console.log(`\n👋 Keluar.`);
+      cleanupServer(server);
+      process.exit(0);
+    } else {
+      console.log('❌ Pilihan tidak valid.');
+    }
+  }
 }
 
-// Banner + menu
-showMenu();
+main();
