@@ -124,73 +124,61 @@ function openBrowser() {
   }
 }
 
-function checkUpdate(cb) {
+function fetchLatestVersion(cb) {
   https.get('https://registry.npmjs.org/hermes-remote/latest', (res) => {
     let body = '';
     res.on('data', (c) => (body += c));
     res.on('end', () => {
-      try {
-        const latest = JSON.parse(body).version;
-        if (latest && latest !== CURRENT_VERSION) {
-          console.log(`\n📦 Update tersedia: v${CURRENT_VERSION} → v${latest}`);
-          console.log(`   Jalankan: npm install -g hermes-remote@latest`);
-        } else {
-          console.log(`\n✅ Sudah versi terbaru (v${CURRENT_VERSION})`);
-        }
-      } catch (_) {
-        console.log(`\n⚠️ Gagal cek versi terbaru.`);
-      }
-      cb();
+      try { cb(JSON.parse(body).version); } catch (_) { cb(null); }
     });
-  }).on('error', () => {
-    console.log(`\n⚠️ Gagal cek versi terbaru (no network).`);
-    cb();
-  });
+  }).on('error', () => cb(null));
 }
 
 function showMenu() {
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout
-  });
+  fetchLatestVersion((latest) => {
+    const hasUpdate = latest && latest !== CURRENT_VERSION;
+    const rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout
+    });
 
-  console.log(`
+    const items = ['Open Web UI', 'Hide to Tray'];
+    if (hasUpdate) items.push(`Update (v${latest})`);
+    items.push('Exit');
+
+    console.log(`
 ======================================================
 🚀 Hermes Remote UI: \x1b[36m${displayUrl}\x1b[0m
 🔑 Default Access PIN: \x1b[33m123456\x1b[0m
 ======================================================
 
-Pilih menu:
-  [1] Open Web UI
-  [2] Hide to Tray
-  [3] Update (Jika belum versi terbaru)
-  [4] Exit
-`);
+Pilih menu:`);
+    items.forEach((label, i) => console.log(`  [${i + 1}] ${label}`));
+    console.log('');
 
-  rl.question('Pilihan: ', (ans) => {
-    const choice = ans.trim();
-    if (choice === '1') {
-      openBrowser();
+    rl.question('Pilihan: ', (ans) => {
+      const idx = parseInt(ans.trim(), 10);
       rl.close();
-      showMenu();
-    } else if (choice === '2') {
-      console.log(`💤 Berjalan di background. Tekan Ctrl+C untuk berhenti.`);
-      console.log(`   Web UI: ${displayUrl}`);
-      rl.close();
-      // keep backend alive
-    } else if (choice === '3') {
-      rl.close();
-      checkUpdate(() => showMenu());
-    } else if (choice === '4') {
-      rl.close();
-      console.log(`👋 Keluar.`);
-      pyProcess.kill('SIGINT');
-      process.exit(0);
-    } else {
-      rl.close();
-      console.log(`❌ Pilihan tidak valid.`);
-      showMenu();
-    }
+      if (idx === 1) {
+        openBrowser();
+        showMenu();
+      } else if (idx === 2) {
+        console.log(`💤 CLI ditutup. Backend tetap jalan di ${displayUrl}`);
+        console.log(`   Untuk berhenti total, tutup proses hermes-remote/python (Ctrl+C / task manager).`);
+        // keep backend alive, CLI/menu closed
+      } else if (hasUpdate && idx === 3) {
+        console.log(`📦 Update tersedia: v${CURRENT_VERSION} → v${latest}`);
+        console.log(`   Jalankan: npm install -g hermes-remote@latest`);
+        showMenu();
+      } else if (idx === items.length) {
+        console.log(`👋 Keluar.`);
+        pyProcess.kill('SIGINT');
+        process.exit(0);
+      } else {
+        console.log(`❌ Pilihan tidak valid.`);
+        showMenu();
+      }
+    });
   });
 }
 
