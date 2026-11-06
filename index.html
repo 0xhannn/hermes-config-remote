@@ -142,6 +142,17 @@
       gap: 6px;
     }
 
+    .health-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:10px; margin-top:12px; }
+    .health-item,.health-metric { border:1px solid var(--card-border); background:#FAF7F0; border-radius:10px; padding:12px; }
+    .health-item-head { display:flex; justify-content:space-between; gap:8px; font-size:12px; font-weight:700; }
+    .health-state { border-radius:999px; padding:2px 8px; font:600 10px 'JetBrains Mono',monospace; background:#FEE2E2; color:#DC2626; }
+    .health-state.ok { background:#DCFCE7; color:#166534; }
+    .health-meta { font:10px 'JetBrains Mono',monospace; color:var(--text-muted); margin-top:6px; overflow-wrap:anywhere; }
+    .health-metrics { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:8px; margin-top:12px; }
+    .health-metric-label { color:var(--text-muted); font-size:10px; text-transform:uppercase; }
+    .health-metric-value { font:600 12px 'JetBrains Mono',monospace; margin-top:4px; overflow-wrap:anywhere; }
+    .health-bar { height:5px; border-radius:5px; background:#E7E5E4; margin-top:6px; overflow:hidden; }
+    .health-bar span { height:100%; display:block; background:var(--blue-dev); }
     .nav-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -318,6 +329,16 @@
       </div>
     </div>
 
+    <div class="arch-card" id="systemHealthCard">
+      <div class="arch-title" style="justify-content:space-between;">
+        <span>System Health · Live</span>
+        <button id="refreshHealthBtn" type="button" style="min-height:44px;padding:8px 12px;border:1px solid var(--card-border);border-radius:8px;background:#fff;color:var(--blue-dev);font:600 12px 'JetBrains Mono',monospace;cursor:pointer;">Refresh</button>
+      </div>
+      <div id="healthServices" class="health-grid" aria-live="polite"><div class="health-meta">Memuat status layanan...</div></div>
+      <div id="healthMetrics" class="health-metrics"></div>
+      <div id="healthUpdatedAt" class="health-meta" aria-live="polite">Menghubungkan...</div>
+    </div>
+
     <!-- Tree Structure Card -->
     <div class="arch-card">
       <div class="arch-title">Core Architecture Overview</div>
@@ -355,6 +376,47 @@
           return;
         }
       } catch (e) {}
+
+      const healthServices = document.getElementById('healthServices');
+      const healthMetrics = document.getElementById('healthMetrics');
+      const healthUpdatedAt = document.getElementById('healthUpdatedAt');
+      const refreshHealthBtn = document.getElementById('refreshHealthBtn');
+      const formatBytes = bytes => {
+        if (bytes < 1024) return `${bytes} B`;
+        const units = ['KiB', 'MiB', 'GiB', 'TiB'];
+        let value = bytes / 1024, unit = 0;
+        while (value >= 1024 && unit < units.length - 1) { value /= 1024; unit++; }
+        return `${value.toFixed(1)} ${units[unit]}`;
+      };
+      const formatUptime = seconds => `${Math.floor(seconds / 86400)}d ${Math.floor(seconds % 86400 / 3600)}h ${Math.floor(seconds % 3600 / 60)}m`;
+      const metric = (label, value, percent = null) => `<div class="health-metric"><div class="health-metric-label">${label}</div><div class="health-metric-value">${value}</div>${percent === null ? '' : `<div class="health-bar"><span style="width:${Math.min(100, Math.max(0, percent))}%"></span></div>`}</div>`;
+      async function refreshHealth() {
+        refreshHealthBtn.disabled = true;
+        try {
+          const res = await fetch('/api/hermes/system/health', { headers: { 'X-Hermes-PIN': pin } });
+          const data = await res.json();
+          if (res.status === 401) {
+            localStorage.removeItem('hermes_pin');
+            window.location.href = '/hermes/auth/?next=' + encodeURIComponent(window.location.pathname);
+            return;
+          }
+          if (!res.ok || !data.success) throw new Error(data.error || `HTTP ${res.status}`);
+          healthServices.innerHTML = data.services.map(service => {
+            const active = service.active === 'active';
+            return `<div class="health-item"><div class="health-item-head"><span>${service.unit}</span><span class="health-state ${active ? 'ok' : ''}">${active ? 'ACTIVE' : service.active.toUpperCase()}</span></div><div class="health-meta">PID ${service.pid || '—'} · Restart ${service.restarts}x</div></div>`;
+          }).join('');
+          const r = data.resources;
+          healthMetrics.innerHTML = metric('CPU', `${r.cpu_percent ?? 'N/A'}%`, r.cpu_percent) + metric('RAM used / total', `${r.memory.used_mb} / ${r.memory.total_mb} MB · ${r.memory.percent}%`, r.memory.percent) + metric('Disk free / total', `${formatBytes(r.disk.free_bytes)} / ${formatBytes(r.disk.total_bytes)}`) + metric('Load average (1/5/15m)', (r.load_average || []).join(' / ') || 'N/A') + metric('Uptime', formatUptime(r.uptime_seconds));
+          healthUpdatedAt.textContent = `Diperbarui ${new Date(data.timestamp).toLocaleTimeString()}`;
+        } catch (err) {
+          healthUpdatedAt.textContent = `Health gagal dimuat: ${err.message}`;
+        } finally {
+          refreshHealthBtn.disabled = false;
+        }
+      }
+      refreshHealthBtn.addEventListener('click', refreshHealth);
+      refreshHealth();
+      setInterval(refreshHealth, 10000);
     };
   </script>
   <script src="/hermes/assets/ui-enhancements.js?v=2"></script>

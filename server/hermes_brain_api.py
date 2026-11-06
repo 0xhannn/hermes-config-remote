@@ -72,7 +72,7 @@ def get_system_health():
         cpu_percent = round((1 - (idle_after - idle_before) / total_delta) * 100, 1) if total_delta else 0
     except (OSError, ValueError, IndexError):
         cpu_percent = None
-    return {"success": True, "timestamp": datetime.now().astimezone().isoformat(timespec="seconds"), "services": services, "resources": {"cpu_percent": cpu_percent, "load_average": load, "memory": memory, "disk": {"total_gb": round(disk.total / 1024**3, 1), "used_gb": round(disk.used / 1024**3, 1), "percent": round(disk.used / disk.total * 100, 1) if disk.total else 0}, "uptime_seconds": uptime_seconds}}
+    return {"success": True, "timestamp": datetime.now().astimezone().isoformat(timespec="seconds"), "services": services, "resources": {"cpu_percent": cpu_percent, "load_average": load, "memory": memory, "disk": {"free_bytes": disk.free, "total_bytes": disk.total, "percent": round(disk.used / disk.total * 100, 1) if disk.total else 0}, "uptime_seconds": uptime_seconds}}
 
 
 HOST = os.environ.get("HERMES_HOST", "0.0.0.0")
