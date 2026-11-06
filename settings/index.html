@@ -145,6 +145,18 @@
       align-items: center;
       gap: 8px;
     }
+    .health-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px; margin-top: 12px; }
+    .health-item { border: 1px solid var(--card-border); background: var(--bg-subtle); border-radius: 10px; padding: 12px; }
+    .health-item-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; }
+    .health-state { border-radius: 999px; padding: 2px 8px; font: 600 10px var(--font-mono); background: var(--danger-bg); color: var(--danger-red); }
+    .health-state.ok { background: var(--status-green-bg); color: var(--status-green-text); }
+    .health-meta { font: 10px var(--font-mono); color: var(--text-muted); margin-top: 6px; overflow-wrap: anywhere; }
+    .health-metrics { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 12px; }
+    .health-metric { background: var(--bg-subtle); border: 1px solid var(--card-border); border-radius: 8px; padding: 10px; }
+    .health-metric-label { color: var(--text-muted); font-size: 10px; text-transform: uppercase; letter-spacing: .04em; }
+    .health-metric-value { font: 600 13px var(--font-mono); margin-top: 3px; }
+    .health-bar { height: 5px; border-radius: 5px; background: #E7E5E4; margin-top: 6px; overflow: hidden; }
+    .health-bar span { height: 100%; display: block; background: var(--blue-dev); }
     .card-desc {
       font-size: 13px;
       color: var(--text-muted);
@@ -340,6 +352,22 @@
           </button>
         </div>
       </form>
+    </div>
+
+    <!-- Realtime Server Health -->
+    <div class="card">
+      <div class="card-title">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3-9 4 18 3-9h4"></path></svg>
+        Health Server Realtime
+      </div>
+      <div class="card-desc">Status layanan utama, penggunaan resource, dan uptime server. Refresh otomatis tiap 10 detik.</div>
+      <div class="db-location-box" style="margin-top: 10px;">
+        <div class="db-location-label">Layanan</div>
+        <div id="healthServices" class="health-grid"><div class="health-meta">Memuat status layanan...</div></div>
+      </div>
+      <div id="healthMetrics" class="health-metrics"></div>
+      <div id="healthUpdatedAt" class="health-meta" aria-live="polite">Belum ada data health.</div>
+      <div class="btn-row" style="margin-top: 10px;"><button id="refreshHealthBtn" class="btn">Refresh Sekarang</button></div>
     </div>
 
     <!-- Hermes Control Center Updater Card -->
@@ -632,6 +660,41 @@
         }
       });
     }
+
+    // Realtime server health monitor
+    const healthServices = document.getElementById('healthServices');
+    const healthMetrics = document.getElementById('healthMetrics');
+    const healthUpdatedAt = document.getElementById('healthUpdatedAt');
+    const refreshHealthBtn = document.getElementById('refreshHealthBtn');
+    const formatUptime = (seconds) => {
+      const days = Math.floor(seconds / 86400);
+      const hours = Math.floor(seconds % 86400 / 3600);
+      const minutes = Math.floor(seconds % 3600 / 60);
+      return `${days}d ${hours}h ${minutes}m`;
+    };
+    async function refreshHealth() {
+      refreshHealthBtn.disabled = true;
+      try {
+        const res = await fetch('/api/hermes/system/health', { headers: { 'X-Hermes-PIN': pin } });
+        const data = await res.json();
+        if (!res.ok || !data.success) throw new Error(data.error || `HTTP ${res.status}`);
+        healthServices.innerHTML = data.services.map(service => {
+          const active = service.active === 'active';
+          return `<div class="health-item"><div class="health-item-head"><span>${service.unit}</span><span class="health-state ${active ? 'ok' : ''}">${active ? 'ACTIVE' : service.active.toUpperCase()}</span></div><div class="health-meta">PID ${service.pid || '—'} · Restart ${service.restarts}x</div></div>`;
+        }).join('');
+        const r = data.resources;
+        const metric = (label, value, percent = null) => `<div class="health-metric"><div class="health-metric-label">${label}</div><div class="health-metric-value">${value}</div>${percent === null ? '' : `<div class="health-bar"><span style="width:${Math.min(100, percent)}%"></span></div>`}</div>`;
+        healthMetrics.innerHTML = metric('CPU', `${r.cpu_percent ?? 'N/A'}%`, r.cpu_percent) + metric('RAM', `${r.memory.used_mb} / ${r.memory.total_mb} MB · ${r.memory.percent}%`, r.memory.percent) + metric('Disk /', `${r.disk.used_gb} / ${r.disk.total_gb} GB · ${r.disk.percent}%`, r.disk.percent) + metric('Load avg (1/5/15m)', (r.load_average || []).join(' / ') || 'N/A') + metric('Uptime', formatUptime(r.uptime_seconds));
+        healthUpdatedAt.textContent = `Diperbarui ${new Date(data.timestamp).toLocaleTimeString()}`;
+      } catch (err) {
+        healthUpdatedAt.textContent = `Health gagal dimuat: ${err.message}`;
+      } finally {
+        refreshHealthBtn.disabled = false;
+      }
+    }
+    refreshHealthBtn.addEventListener('click', refreshHealth);
+    refreshHealth();
+    setInterval(refreshHealth, 10000);
 
     // Updater Logic
     const updateVersionInfo = document.getElementById('updateVersionInfo');

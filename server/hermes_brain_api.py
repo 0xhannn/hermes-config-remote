@@ -24,6 +24,56 @@ import socketserver
 import http.server
 import urllib.parse
 import urllib.request
+import subprocess
+import time
+
+HEALTH_SERVICES = ("hermes-brain-api.service", "hermes-gateway.service", "nginx.service", "cloudflared.service")
+
+def get_system_health():
+    services = []
+    for unit in HEALTH_SERVICES:
+        try:
+            raw = subprocess.check_output(
+                ["systemctl", "show", unit, "--no-page", "--property=LoadState,ActiveState,SubState,MainPID,NRestarts,ActiveEnterTimestamp"],
+                text=True, timeout=2,
+            )
+            props = dict(line.split("=", 1) for line in raw.splitlines() if "=" in line)
+            services.append({"unit": unit, "load": props.get("LoadState", "unknown"), "active": props.get("ActiveState", "unknown"), "sub": props.get("SubState", "unknown"), "pid": int(props.get("MainPID", "0") or 0), "restarts": int(props.get("NRestarts", "0") or 0), "since": props.get("ActiveEnterTimestamp", "")})
+        except Exception as exc:
+            services.append({"unit": unit, "load": "unknown", "active": "unknown", "sub": "unknown", "pid": 0, "restarts": 0, "error": str(exc)})
+    mem = {}
+    try:
+        with open("/proc/meminfo", encoding="utf-8") as f:
+            mem = {k: int(v.split()[0]) for line in f if (parts := line.split(":", 1)) and len(parts) == 2 for k, v in [parts]}
+        total = mem.get("MemTotal", 0)
+        available = mem.get("MemAvailable", 0)
+        memory = {"total_mb": round(total / 1024), "used_mb": round((total - available) / 1024), "percent": round((total - available) / total * 100, 1) if total else 0}
+    except Exception:
+        memory = {"total_mb": 0, "used_mb": 0, "percent": 0}
+    disk = shutil.disk_usage("/")
+    try:
+        uptime_seconds = int(float(open("/proc/uptime", encoding="utf-8").read().split()[0]))
+    except Exception:
+        uptime_seconds = 0
+    try:
+        load = [round(x, 2) for x in os.getloadavg()]
+    except (AttributeError, OSError):
+        load = []
+    try:
+        with open("/proc/stat", encoding="utf-8") as f:
+            cpu_before = list(map(int, f.readline().split()[1:]))
+        time.sleep(0.15)
+        with open("/proc/stat", encoding="utf-8") as f:
+            cpu_after = list(map(int, f.readline().split()[1:]))
+        idle_before = cpu_before[3] + cpu_before[4]
+        idle_after = cpu_after[3] + cpu_after[4]
+        total_before, total_after = sum(cpu_before), sum(cpu_after)
+        total_delta = total_after - total_before
+        cpu_percent = round((1 - (idle_after - idle_before) / total_delta) * 100, 1) if total_delta else 0
+    except (OSError, ValueError, IndexError):
+        cpu_percent = None
+    return {"success": True, "timestamp": datetime.now().astimezone().isoformat(timespec="seconds"), "services": services, "resources": {"cpu_percent": cpu_percent, "load_average": load, "memory": memory, "disk": {"total_gb": round(disk.total / 1024**3, 1), "used_gb": round(disk.used / 1024**3, 1), "percent": round(disk.used / disk.total * 100, 1) if disk.total else 0}, "uptime_seconds": uptime_seconds}}
+
 
 HOST = os.environ.get("HERMES_HOST", "0.0.0.0")
 PORT = int(os.environ.get("PORT", os.environ.get("HERMES_PORT", 8093)))
@@ -137,6 +187,9 @@ class HermesBrainHandler(http.server.BaseHTTPRequestHandler):
 
         if not self._check_auth():
             return self._send_json(401, {"success": False, "error": "Unauthorized: PIN diperlukan"})
+
+        if path == "/api/hermes/system/health":
+            return self._send_json(200, get_system_health())
 
         if path == "/api/hermes/config":
             try:
