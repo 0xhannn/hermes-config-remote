@@ -406,7 +406,7 @@
             return `<div class="health-item"><div class="health-item-head"><span>${service.unit}</span><span class="health-state ${active ? 'ok' : ''}">${active ? 'ACTIVE' : service.active.toUpperCase()}</span></div><div class="health-meta">PID ${service.pid || '—'} · Restart ${service.restarts}x</div></div>`;
           }).join('');
           const r = data.resources;
-          healthMetrics.innerHTML = metric('CPU', `${r.cpu_percent ?? 'N/A'}%`, r.cpu_percent) + metric('RAM used / total', `${r.memory.used_mb} / ${r.memory.total_mb} MB · ${r.memory.percent}%`, r.memory.percent) + metric('Disk free / total', `${formatBytes(r.disk.free_bytes)} / ${formatBytes(r.disk.total_bytes)}`) + metric('Load average (1/5/15m)', (r.load_average || []).join(' / ') || 'N/A') + metric('Uptime', formatUptime(r.uptime_seconds));
+          healthMetrics.innerHTML = metric('CPU', `${r.cpu_percent ?? 'N/A'}%`, r.cpu_percent) + metric('RAM available / total', `${r.memory.available_mb} / ${r.memory.total_mb} MB · ${r.memory.percent}% used`, r.memory.percent) + metric('Disk free / total', `${formatBytes(r.disk.free_bytes)} / ${formatBytes(r.disk.total_bytes)}`) + metric('Load average (1/5/15m)', (r.load_average || []).join(' / ') || 'N/A') + metric('Uptime', formatUptime(r.uptime_seconds));
           healthUpdatedAt.textContent = `Diperbarui ${new Date(data.timestamp).toLocaleTimeString()}`;
         } catch (err) {
           healthUpdatedAt.textContent = `Health gagal dimuat: ${err.message}`;

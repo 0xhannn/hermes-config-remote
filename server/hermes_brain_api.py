@@ -47,9 +47,9 @@ def get_system_health():
             mem = {k: int(v.split()[0]) for line in f if (parts := line.split(":", 1)) and len(parts) == 2 for k, v in [parts]}
         total = mem.get("MemTotal", 0)
         available = mem.get("MemAvailable", 0)
-        memory = {"total_mb": round(total / 1024), "used_mb": round((total - available) / 1024), "percent": round((total - available) / total * 100, 1) if total else 0}
+        memory = {"total_mb": round(total / 1024), "available_mb": round(available / 1024), "percent": round((total - available) / total * 100, 1) if total else 0}
     except Exception:
-        memory = {"total_mb": 0, "used_mb": 0, "percent": 0}
+        memory = {"total_mb": 0, "available_mb": 0, "percent": 0}
     disk = shutil.disk_usage("/")
     try:
         uptime_seconds = int(float(open("/proc/uptime", encoding="utf-8").read().split()[0]))
