@@ -503,6 +503,24 @@
   <link rel="stylesheet" href="/assets/ui-enhancements.css?v=3">
 </head>
 <body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <img src="/assets/hermes-icon.svg" alt="Hermes" style="width:26px;height:26px;border-radius:6px;">
+      <span class="logo-badge">⚡ HERMES</span>
+    </div>
+    <nav class="sidebar-nav">
+    <a href="/" class="sidebar-link">📊 Dashboard</a>
+    <a href="/brain/" class="sidebar-link">🧠 Brain</a>
+    <a href="/context/" class="sidebar-link active">📚 Context</a>
+    <a href="/skills/" class="sidebar-link">⚡ Skills</a>
+    <a href="/settings/" class="sidebar-link">⚙️ Settings</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="status-pill"><span class="status-dot"></span> LIVE SYSTEM</div>
+    </div>
+  </aside>
+  <main class="main-content">
   <div class="container">
     <header>
       <div class="brand-row">
@@ -864,5 +882,7 @@
     });
   </script>
   <script src="/assets/ui-enhancements.js?v=2"></script>
+</main>
+</div>
 </body>
 </html>
