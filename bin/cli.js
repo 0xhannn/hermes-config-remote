@@ -66,7 +66,8 @@ const API_SCRIPT = path.join(ROOT_DIR, 'server', 'hermes_brain_api.py');
 // If Python is available, spawn hermes_brain_api.py
 console.log(`⚡ Starting Hermes Remote Control Center...`);
 
-const pyProcess = spawn('python3', [API_SCRIPT], {
+const pyBin = process.platform === 'win32' ? 'python' : 'python3';
+const pyProcess = spawn(pyBin, [API_SCRIPT], {
   env: {
     ...process.env,
     HERMES_HOST: host,
@@ -77,8 +78,8 @@ const pyProcess = spawn('python3', [API_SCRIPT], {
 });
 
 pyProcess.on('error', (err) => {
-  console.error(`❌ Failed to start backend: ${err.message}`);
-  console.error(`Ensure python3 is installed and available in your PATH.`);
+  console.error(`❌ Failed to start backend (${pyBin}): ${err.message}`);
+  console.error(`Ensure python is installed and available in your PATH.`);
   process.exit(1);
 });
 
@@ -107,9 +108,18 @@ console.log(`======================================================\n`);
 if (autoOpen) {
   setTimeout(() => {
     try {
-      const openCmd = process.platform === 'win32' ? 'start' :
-                      process.platform === 'darwin' ? 'open' : 'xdg-open';
-      spawn(openCmd, [displayUrl], { detached: true, stdio: 'ignore' }).unref();
+      let openCmd, openArgs;
+      if (process.platform === 'win32') {
+        openCmd = 'cmd';
+        openArgs = ['/c', 'start', '', displayUrl];
+      } else if (process.platform === 'darwin') {
+        openCmd = 'open';
+        openArgs = [displayUrl];
+      } else {
+        openCmd = 'xdg-open';
+        openArgs = [displayUrl];
+      }
+      spawn(openCmd, openArgs, { detached: true, stdio: 'ignore' }).unref();
     } catch (_) {}
   }, 1000);
 }

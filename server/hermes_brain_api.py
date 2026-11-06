@@ -14,7 +14,10 @@ Endpoints:
 import os
 import sys
 import json
-import yaml
+try:
+    import yaml
+except ImportError:
+    yaml = None
 import shutil
 import tarfile
 import tempfile
@@ -101,12 +104,24 @@ def set_current_pin(new_pin):
 def load_yaml():
     if not os.path.exists(CONFIG_PATH):
         return {}
-    with open(CONFIG_PATH, "r", encoding="utf-8") as f:
-        return yaml.safe_load(f) or {}
+    if yaml is not None:
+        try:
+            with open(CONFIG_PATH, "r", encoding="utf-8") as f:
+                return yaml.safe_load(f) or {}
+        except Exception:
+            pass
+    return {}
 
 def save_yaml(data):
+    if yaml is not None:
+        try:
+            with open(CONFIG_PATH, "w", encoding="utf-8") as f:
+                yaml.dump(data, f, default_flow_style=False, sort_keys=False, allow_unicode=True)
+            return
+        except Exception:
+            pass
     with open(CONFIG_PATH, "w", encoding="utf-8") as f:
-        yaml.dump(data, f, default_flow_style=False, sort_keys=False, allow_unicode=True)
+        f.write(json.dumps(data, ensure_ascii=False, indent=2))
 
 class HermesBrainHandler(http.server.BaseHTTPRequestHandler):
     def _send_cors(self):
