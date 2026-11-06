@@ -74,8 +74,33 @@
     p {
       font-size: 13px;
       color: var(--text-muted);
-      margin-bottom: 24px;
+      margin-bottom: 20px;
       line-height: 1.5;
+    }
+
+    .default-pin-box {
+      background: var(--bg-card);
+      border: 1px dashed var(--blue-border);
+      border-radius: 10px;
+      padding: 12px 16px;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .default-pin-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .default-pin-value {
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: 4px;
+      color: var(--blue-dev);
+      font-family: 'JetBrains Mono', monospace;
     }
 
     .input-box {
@@ -134,8 +159,12 @@
     </div>
     <div style="font-size: 40px; margin-bottom: 12px;">🔒</div>
     <h1>Autentikasi Master · Hermes Control Center</h1>
-    <p>Masukkan Master PIN untuk mengakses seluruh ekosistem Hermes Control Hub (Default instalasi baru: <code>123456</code>).</p>
+    <p>Masukkan Master PIN untuk mengakses seluruh ekosistem Hermes Control Hub.</p>
 
+    <div class="default-pin-box">
+      <div class="default-pin-label">DEFAULT PIN INSTALASI BARU</div>
+      <div class="default-pin-value">123456</div>
+    </div>
     <div class="err-msg" id="errMsg">PIN Salah! Akses ditolak.</div>
 
     <input type="password" id="pinField" class="input-box" placeholder="masukkan PIN" autofocus onkeypress="if(event.key === 'Enter') submitAuth()">
