@@ -49,7 +49,7 @@
     }
     .container {
       width: 100%;
-      max-width: 1100px;
+      max-width: 1400px;
       display: flex;
       flex-direction: column;
       gap: 24px;
@@ -238,6 +238,13 @@
     #fileInput {
       display: none;
     }
+    @media (max-width: 767px) {
+      body { padding: 14px 16px; }
+      .card { padding: 14px 16px; border-radius: 12px; }
+      .btn { min-height: 44px; }
+      .modal-backdrop { padding: 12px; }
+      .modal-box { max-width: calc(100% - 24px); }
+    }
   </style>
   <link rel="stylesheet" href="/hermes/assets/ui-enhancements.css?v=3">
 </head>
@@ -249,7 +256,7 @@
         <img src="/hermes/assets/hermes-icon.svg" alt="Hermes" class="brand-logo">
         <div>
           <span class="brand-badge">SETTINGS</span>
-          <h1>System &amp; Data Settings</h1>
+          <h1>System &amp; Data Settings · Hermes Control Center</h1>
         </div>
       </div>
       <div class="header-actions">
@@ -326,7 +333,7 @@
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
         Kotak Masukan &amp; Feedback
       </div>
-      <div class="card-desc">Kirim ide perbaikan, laporan bug, atau saran pengembangan Hermes Control Center. Pesan langsung diteruskan ke email admin@0xhannn.com.</div>
+      <div class="card-desc">Kirim ide perbaikan, laporan bug, atau saran pengembangan Hermes Control Center. Pesan langsung diteruskan ke email admin.</div>
       <form id="feedbackForm" style="display: flex; flex-direction: column; gap: 14px; max-width: 540px; margin-top: 6px;">
         <div style="display: flex; flex-direction: column; gap: 6px;">
           <label style="font-size: 12px; font-weight: 600; color: var(--text-muted);">KATEGORI MASUKAN</label>
@@ -343,7 +350,7 @@
         </div>
         <div style="display: flex; flex-direction: column; gap: 6px;">
           <label style="font-size: 12px; font-weight: 600; color: var(--text-muted);">DETAIL MASUKAN</label>
-          <textarea id="feedbackMessage" required rows="4" placeholder="masukkan detail saran atau masukan Anda" style="padding: 10px 14px; border-radius: 8px; border: 1px solid var(--card-border); font-size: 14px; resize: vertical; font-family: inherit;"></textarea>
+          <textarea id="feedbackMessage" required rows="4" placeholder="masukkan detail masukan" style="padding: 10px 14px; border-radius: 8px; border: 1px solid var(--card-border); font-size: 14px; resize: vertical; font-family: inherit;"></textarea>
         </div>
         <div style="margin-top: 4px;">
           <button type="submit" class="btn btn-primary" id="submitFeedbackBtn">
@@ -627,7 +634,7 @@
           });
           const data = await res.json();
           if (data.success) {
-            showConfirm('Masukan Terkirim', 'Terima kasih! Saran atau laporan Anda telah berhasil dikirimkan ke email admin@0xhannn.com.', false);
+            showConfirm('Masukan Terkirim', 'Terima kasih! Saran atau laporan Anda telah berhasil dikirimkan ke email admin.', false);
             feedbackSubject.value = '';
             feedbackMessage.value = '';
           } else {
@@ -837,13 +844,12 @@
             });
             const data = await res.json();
             if (data.success) {
-              alert(data.message || 'Backup berhasil diimpor!');
-              window.location.reload();
+              showConfirm('Import Berhasil', data.message || 'Backup berhasil diimpor!', false).then(() => window.location.reload());
             } else {
-              alert('Gagal restore: ' + (data.error || 'Terjadi kesalahan'));
+              showConfirm('Gagal Restore', data.error || 'Terjadi kesalahan saat restore backup', false);
             }
           } catch (err) {
-            alert('Gagal koneksi ke server untuk restore backup');
+            showConfirm('Gagal Koneksi', 'Gagal terhubung ke server untuk restore backup', false);
           }
         };
         reader.readAsDataURL(file);
