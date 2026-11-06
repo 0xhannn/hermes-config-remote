@@ -10,6 +10,7 @@ const https = require('https');
 const fs = require('fs');
 const path = require('path');
 const { spawn } = require('child_process');
+const readline = require('readline');
 
 const args = process.argv.slice(2);
 
@@ -61,9 +62,12 @@ for (let i = 0; i < args.length; i++) {
 
 const ROOT_DIR = path.resolve(__dirname, '..');
 const API_SCRIPT = path.join(ROOT_DIR, 'server', 'hermes_brain_api.py');
+const displayUrl = `http://${host === '0.0.0.0' ? 'localhost' : host}:${port}/hermes/`;
 
-// 1. Start Python Backend API (Port + 1000 or internal)
-// If Python is available, spawn hermes_brain_api.py
+const pkg = require('../package.json');
+const CURRENT_VERSION = pkg.version;
+
+// 1. Start Python Backend API
 console.log(`⚡ Starting Hermes Remote Control Center...`);
 
 const pyBin = process.platform === 'win32' ? 'python' : 'python3';
@@ -87,6 +91,7 @@ pyProcess.on('exit', (code) => {
   if (code !== 0 && code !== null) {
     console.error(`Backend process exited with code ${code}`);
   }
+  process.exit(0);
 });
 
 // Clean exit handlers
@@ -99,27 +104,95 @@ process.on('SIGTERM', () => {
   process.exit(0);
 });
 
-const displayUrl = `http://${host === '0.0.0.0' ? 'localhost' : host}:${port}/hermes/`;
-console.log(`\n======================================================`);
-console.log(`🚀 Hermes Remote UI: \x1b[36m${displayUrl}\x1b[0m`);
-console.log(`🔑 Default Access PIN: \x1b[33m123456\x1b[0m`);
-console.log(`======================================================\n`);
-
-if (autoOpen) {
-  setTimeout(() => {
-    try {
-      let openCmd, openArgs;
-      if (process.platform === 'win32') {
-        openCmd = 'cmd';
-        openArgs = ['/c', 'start', '', displayUrl];
-      } else if (process.platform === 'darwin') {
-        openCmd = 'open';
-        openArgs = [displayUrl];
-      } else {
-        openCmd = 'xdg-open';
-        openArgs = [displayUrl];
-      }
-      spawn(openCmd, openArgs, { detached: true, stdio: 'ignore' }).unref();
-    } catch (_) {}
-  }, 1000);
+function openBrowser() {
+  try {
+    let openCmd, openArgs;
+    if (process.platform === 'win32') {
+      openCmd = 'cmd';
+      openArgs = ['/c', 'start', '', displayUrl];
+    } else if (process.platform === 'darwin') {
+      openCmd = 'open';
+      openArgs = [displayUrl];
+    } else {
+      openCmd = 'xdg-open';
+      openArgs = [displayUrl];
+    }
+    spawn(openCmd, openArgs, { detached: true, stdio: 'ignore' }).unref();
+    console.log(`🌐 Browser opened → ${displayUrl}`);
+  } catch (_) {
+    console.log(`📋 Open manually: ${displayUrl}`);
+  }
 }
+
+function checkUpdate(cb) {
+  https.get('https://registry.npmjs.org/hermes-remote/latest', (res) => {
+    let body = '';
+    res.on('data', (c) => (body += c));
+    res.on('end', () => {
+      try {
+        const latest = JSON.parse(body).version;
+        if (latest && latest !== CURRENT_VERSION) {
+          console.log(`\n📦 Update tersedia: v${CURRENT_VERSION} → v${latest}`);
+          console.log(`   Jalankan: npm install -g hermes-remote@latest`);
+        } else {
+          console.log(`\n✅ Sudah versi terbaru (v${CURRENT_VERSION})`);
+        }
+      } catch (_) {
+        console.log(`\n⚠️ Gagal cek versi terbaru.`);
+      }
+      cb();
+    });
+  }).on('error', () => {
+    console.log(`\n⚠️ Gagal cek versi terbaru (no network).`);
+    cb();
+  });
+}
+
+function showMenu() {
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout
+  });
+
+  console.log(`
+======================================================
+🚀 Hermes Remote UI: \x1b[36m${displayUrl}\x1b[0m
+🔑 Default Access PIN: \x1b[33m123456\x1b[0m
+======================================================
+
+Pilih menu:
+  [1] Open Web UI
+  [2] Hide to Tray
+  [3] Update (Jika belum versi terbaru)
+  [4] Exit
+`);
+
+  rl.question('Pilihan: ', (ans) => {
+    const choice = ans.trim();
+    if (choice === '1') {
+      openBrowser();
+      rl.close();
+      showMenu();
+    } else if (choice === '2') {
+      console.log(`💤 Berjalan di background. Tekan Ctrl+C untuk berhenti.`);
+      console.log(`   Web UI: ${displayUrl}`);
+      rl.close();
+      // keep backend alive
+    } else if (choice === '3') {
+      rl.close();
+      checkUpdate(() => showMenu());
+    } else if (choice === '4') {
+      rl.close();
+      console.log(`👋 Keluar.`);
+      pyProcess.kill('SIGINT');
+      process.exit(0);
+    } else {
+      rl.close();
+      console.log(`❌ Pilihan tidak valid.`);
+      showMenu();
+    }
+  });
+}
+
+// Banner + menu
+showMenu();
