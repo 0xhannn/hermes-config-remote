@@ -1,92 +1,93 @@
-# Hermes Control Center (Remote Config)
+<p align="center">
+  <img src="assets/hermes-icon.svg" alt="Hermes Remote" width="72" height="72">
+</p>
 
-Full-spectrum local-first web control center and system manager for **Hermes Agent**.
+<h1 align="center">Hermes Remote</h1>
 
-## 🚀 Quick Start (NPX / NPM)
+<p align="center">
+  Control center lokal untuk Hermes Agent.<br>
+  Model, memori, skills, dan settings — di mesin kamu, bukan di cloud.
+</p>
 
-### 1. Instant Run via GitHub (No NPM Install Required)
-Jalankan langsung tanpa perlu install apa pun:
+<p align="center">
+  <a href="https://www.npmjs.com/package/hermes-remote"><img src="https://img.shields.io/npm/v/hermes-remote?style=flat-square&color=2563EB" alt="npm"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-78716C?style=flat-square" alt="MIT"></a>
+  <img src="https://img.shields.io/badge/node-%3E%3D16-1C1917?style=flat-square" alt="Node">
+  <img src="https://img.shields.io/badge/python-%3E%3D3.8-1C1917?style=flat-square" alt="Python">
+</p>
 
-```bash
-npx github:0xhannn/hermes-config-remote
-```
+<p align="center">
+  <code>npm install -g hermes-remote</code>
+</p>
 
-### 2. NPM Package (Global Install)
+---
+
+## Kenapa ini
+
+Hermes Agent hidup di mesin lokal. Mengutak-atik model, memori, dan skills lewat file mentah cepat jadi berantakan. Hermes Remote membuka satu halaman di `localhost` untuk itu.
+
+Tidak ada akun. Tidak ada data yang dikirim ke server kami. PIN hanya menjaga sesi di mesin itu.
+
+## Pasang
+
+Butuh Node.js 16+ dan Python 3.8+. Python cukup yang sudah ada di sistem.
+
 ```bash
 npm install -g hermes-remote
 hermes-remote
 ```
 
-### 3. Git Clone (Manual Setup)
-```bash
-git clone https://github.com/0xhannn/hermes-config-remote.git
-cd hermes-config-remote
-./bin/cli.js
-```
+Buka [http://localhost:8093](http://localhost:8093). PIN awal `123456`. Ganti sebelum halaman ini bisa dijangkau dari luar mesin.
 
----
-
-### ⚙️ CLI Options & Flags
+Tanpa pasang global:
 
 ```bash
-# Ganti port custom
-npx github:0xhannn/hermes-config-remote -p 8090
-
-# Jalankan di VPS / Headless (tanpa otomatis buka browser GUI)
-npx github:0xhannn/hermes-config-remote --no-open
-
-# Bind ke semua IP interface VPS
-npx github:0xhannn/hermes-config-remote --host 0.0.0.0
-
-# Bantuan lengkap
-npx github:0xhannn/hermes-config-remote --help
+npx github:0xhannn/hermes-config-remote
 ```
 
-- **Default Master PIN**: `123456` *(atau PIN kustom yang tersimpan di `~/.hermes/.pin_secret`)*.
-- **Web UI URL**: `http://localhost:8093/hermes/`
-- **Prasyarat**: Node.js 16+ & Python 3.8+ (stdlib bawaan OS).
+## Di dalam halaman
 
----
+| Halaman | Buat apa |
+|---|---|
+| Dashboard | Status proses lokal, RAM, disk |
+| Brain | Lihat model aktif, ganti provider |
+| Context | Baca dan ubah `USER.md` serta `MEMORY.md` |
+| Skills | Lihat skill yang terpasang |
+| Settings | Ganti PIN, cadangan `tar.gz`, salin perintah update |
 
-- **Brain Model & Provider Switcher**: Real-time LLM inspection and dynamic model switching with 9Router integration.
-- **Persistent Memory & Context Vault**: View, search, and manage long-term persona notes and facts (`USER.md` & `MEMORY.md`).
-- **Dynamic Skills Hub**: Real-time procedural skill viewer and manager.
-- **Backup & Restore**: One-click local backup archive (`tar.gz`) export & import.
-- **Built-in Self Updater**: Git-based version checking and one-click updates directly from the settings panel.
-- **Zero-Secret Security**: No hardcoded credentials, PIN-protected admin session management (Default PIN: `123456`).
+## Perintah
 
-## Project Structure
+```bash
+hermes-remote                  # port 8093, buka browser
+hermes-remote -p 8090          # port lain
+hermes-remote --no-open        # tanpa buka browser (VPS)
+hermes-remote --host 0.0.0.0   # dengar di semua interface
+hermes-remote --help
+```
+
+`--host 0.0.0.0` membuka halaman ke jaringan. Ganti PIN dulu.
+
+## Update
+
+Halaman Settings membandingkan versi lokal dengan npm. Kalau ada yang lebih baru, salin perintah ini, matikan server, jalankan di terminal:
+
+```bash
+npm install -g hermes-remote@latest
+```
+
+Halaman tidak menarik git dan tidak mematikan prosesnya sendiri.
+
+## Isi repo
 
 ```text
-hermes-config-remote/
-├── index.html            # Main Dashboard Hub
-├── auth/                 # Protected Entry Gate
-├── brain/                # Model, Provider, & Parameters Monitor
-├── context/              # Long-term Memory & Persona Viewer
-├── skills/               # Procedural Skills Catalog & Viewer
-├── settings/             # System Settings, Backup & Update Center
-├── assets/               # CSS styles, Web Audio SFX, Icons
-└── server/
-    └── hermes_brain_api.py # Python-based Local Management API Daemon
+bin/cli.js                  menu, nyalakan server, tray
+server/hermes_brain_api.py  API lokal, port 8093
+index.html                  dashboard
+brain/  context/  skills/   halaman panel
+settings/  auth/            pengaturan dan pintu PIN
+assets/                     gaya, ikon, suara
 ```
 
-## Setup & Running
+## Lisensi
 
-### 1. Requirements
-- Python 3.10+
-- PyYAML (`pip install pyyaml`)
-
-### 2. Run Backend Daemon
-```bash
-python3 server/hermes_brain_api.py
-```
-Default port: `8093` (configurable via `HERMES_PORT` environment variable).
-
-### 3. Serve Frontend
-Serve the repository root using any static web server (Nginx, Caddy, or Python HTTP):
-```bash
-python3 -m http.server 8080
-```
-
-## License
-MIT
+[MIT](LICENSE). Copyright (c) 2026 PH Labs.
