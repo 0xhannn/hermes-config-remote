@@ -571,7 +571,10 @@
           <div class="section-title" id="section-title">Daftar Memori (MEMORY.md)</div>
           <div class="section-meta" id="section-meta">Memuat data...</div>
         </div>
-        <input type="text" id="search-input" class="search-box" placeholder="masukkan kata pencarian" oninput="filterItems()">
+        <div style="display:flex; gap:8px; align-items:center;">
+          <input type="text" id="search-input" class="search-box" placeholder="masukkan kata pencarian" oninput="filterItems()">
+          <button class="btn-confirm-delete" style="background:var(--blue-dev); border-color:var(--blue-dev); white-space:nowrap;" onclick="promptEntry(null)">Tambah</button>
+        </div>
       </div>
 
       <div class="item-list" id="items-container">
@@ -600,6 +603,19 @@
       </div>
       <div class="modal-actions">
         <button class="btn-confirm-delete" style="background:var(--blue-dev); border-color:var(--blue-dev);" onclick="submitAuth()">Masuk Vault</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="entry-modal" style="display:none;">
+    <div class="modal-card">
+      <div class="modal-title"><span id="entry-modal-title">Tambah Entri</span></div>
+      <div style="margin-bottom: 20px;">
+        <textarea id="entry-input" class="search-box" style="width:100%; min-height:140px; font-size:14px; padding:10px 14px; resize:vertical;" placeholder="masukkan entri"></textarea>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closeEntry()">Batal</button>
+        <button class="btn-confirm-delete" id="btn-entry-save" style="background:var(--blue-dev); border-color:var(--blue-dev);" onclick="saveEntry()">Simpan</button>
       </div>
     </div>
   </div>
@@ -767,6 +783,7 @@
               <span class="entry-tag">${escapeHtml(item.tag)}</span>
               <span class="entry-index">#${item.originalIndex + 1}</span>
             </div>
+            <button class="btn-delete" onclick="promptEntry(${item.originalIndex})"><span>Edit</span></button>
             <button class="btn-delete" onclick="promptDelete('${currentTab}', ${item.originalIndex})">
               <span>✕</span>
               <span>Hapus</span>
@@ -878,6 +895,46 @@
     }
 
     // Init on load
+    let pendingEntryIndex = null;
+
+    function promptEntry(idx) {
+      pendingEntryIndex = idx;
+      const rawList = currentTab === 'memory' ? MEMORY_RAW : USER_RAW;
+      document.getElementById('entry-modal-title').textContent = idx === null ? 'Tambah Entri' : 'Edit Entri';
+      document.getElementById('entry-input').value = idx === null ? '' : (rawList[idx] || '');
+      showModal('entry-modal');
+    }
+
+    function closeEntry() {
+      dismissTopModal();
+      pendingEntryIndex = null;
+    }
+
+    async function saveEntry() {
+      const text = document.getElementById('entry-input').value.trim();
+      if (!text) return;
+      const btn = document.getElementById('btn-entry-save');
+      btn.disabled = true;
+      try {
+        const res = await fetch('/api/memory/save', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Hermes-PIN': authKey },
+          body: JSON.stringify({ target: currentTab, text: text, index: pendingEntryIndex })
+        });
+        const data = await res.json();
+        if (data.success) {
+          closeEntry();
+          await loadData();
+        } else {
+          alert('Gagal simpan: ' + (data.error || 'Unknown error'));
+        }
+      } catch (err) {
+        alert('Error koneksi ke API server: ' + err.message);
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
       loadData();
     });

@@ -1064,6 +1064,24 @@ class HermesBrainHandler(http.server.BaseHTTPRequestHandler):
             except Exception as e:
                 return self._send_json(500, {"success": False, "error": f"Gagal restore backup: {str(e)}"})
 
+        if path == "/api/memory/save":
+            target = body.get("target")
+            text = body.get("text")
+            index = body.get("index", None)
+            if target not in ("memory", "user") or not isinstance(text, str) or not text.strip():
+                return self._send_json(400, {"success": False, "error": "target atau text tidak valid"})
+            if "\u00a7" in text:
+                return self._send_json(400, {"success": False, "error": "teks tidak boleh berisi pemisah entri"})
+            entries = _read_memory_entries(target)
+            if index is None:
+                entries.append(text.strip())
+            elif type(index) is not int or index < 0 or index >= len(entries):
+                return self._send_json(404, {"success": False, "error": "Entri tidak ada"})
+            else:
+                entries[index] = text.strip()
+            _write_memory_entries(target, entries)
+            return self._send_json(200, {"success": True, "count": len(entries)})
+
         if path == "/api/memory/delete":
             target = body.get("target")
             index = body.get("index")
