@@ -923,15 +923,15 @@ class HermesBrainHandler(http.server.BaseHTTPRequestHandler):
         if path == "/api/hermes/system/update/check":
             try:
                 import json as _json
-                import urllib.request
+                import urllib.request as _urlreq
                 pkg_path = os.path.join(HERMES_WEB_DIR, "package.json")
                 with open(pkg_path, "r", encoding="utf-8") as f:
                     local_version = _json.load(f).get("version", "")
-                req = urllib.request.Request(
+                req = _urlreq.Request(
                     "https://registry.npmjs.org/hermes-remote/latest",
                     headers={"Accept": "application/json"}
                 )
-                with urllib.request.urlopen(req, timeout=8) as resp:
+                with _urlreq.urlopen(req, timeout=8) as resp:
                     latest_version = _json.loads(resp.read().decode("utf-8")).get("version", "")
                 return self._send_json(200, {
                     "success": True,
