@@ -215,13 +215,21 @@ body { margin: 0; padding: 0 !important; }
 .main-content > .container { padding-bottom: 8px; }
 .main-content footer { margin-bottom: 8px; }
 @media (max-width: 767px) {
+  .app-shell { flex-direction: column; }
   .sidebar {
-    position: fixed;
+    position: sticky;
+    top: 0;
+    transform: none;
+    width: 100%;
+    flex: 0 0 auto;
+    height: auto;
+    flex-direction: row;
+    align-items: center;
+    overflow-x: auto;
     z-index: 20;
-    transform: translateX(-100%);
-    width: 248px;
-    flex-basis: 248px;
   }
-  .sidebar.is-open { transform: none; }
-  .main-content { padding: 64px 16px 48px; }
+  .sidebar-nav { flex-direction: row; }
+  .sidebar-brand, .sidebar-foot { display: none; }
+  .main-content { padding: 16px 16px 48px; }
 }
+.sidebar-toggle { display: none !important; }
