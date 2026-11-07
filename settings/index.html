@@ -172,18 +172,6 @@
       align-items: center;
       gap: 8px;
     }
-    .health-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px; margin-top: 12px; }
-    .health-item { border: 1px solid var(--card-border); background: var(--bg-subtle); border-radius: 10px; padding: 12px; }
-    .health-item-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; }
-    .health-state { border-radius: 999px; padding: 2px 8px; font: 600 10px var(--font-mono); background: var(--danger-bg); color: var(--danger-red); }
-    .health-state.ok { background: var(--status-green-bg); color: var(--status-green-text); }
-    .health-meta { font: 10px var(--font-mono); color: var(--text-muted); margin-top: 6px; overflow-wrap: anywhere; }
-    .health-metrics { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 12px; }
-    .health-metric { background: var(--bg-subtle); border: 1px solid var(--card-border); border-radius: 8px; padding: 10px; }
-    .health-metric-label { color: var(--text-muted); font-size: 10px; text-transform: uppercase; letter-spacing: .04em; }
-    .health-metric-value { font: 600 13px var(--font-mono); margin-top: 3px; }
-    .health-bar { height: 5px; border-radius: 5px; background: #E7E5E4; margin-top: 6px; overflow: hidden; }
-    .health-bar span { height: 100%; display: block; background: var(--blue-dev); }
     .card-desc {
       font-size: 13px;
       color: var(--text-muted);
@@ -217,13 +205,11 @@
       flex-wrap: wrap;
     }
     footer {
-      text-align: center;
+      margin-top: 40px;
       font-size: 12px;
+      font-family: 'JetBrains Mono', monospace;
       color: var(--text-muted);
-      margin-top: 24px;
-      padding-top: 16px;
-      border-top: 1px solid var(--card-border);
-      width: 100%;
+      text-align: center;
     }
     /* Modal */
     .modal-backdrop {

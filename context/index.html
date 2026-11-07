@@ -308,6 +308,15 @@
       display: flex;
       align-items: center;
       gap: 8px;
+      min-width: 0;
+    }
+
+    .entry-actions {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+      margin-left: auto;
     }
 
     .entry-tag {
@@ -809,11 +818,13 @@
               <span class="entry-tag">${escapeHtml(item.tag)}</span>
               <span class="entry-index">#${item.originalIndex + 1}</span>
             </div>
-            <button class="btn-delete" onclick="promptEntry(${item.originalIndex})"><span>Edit</span></button>
-            <button class="btn-delete" onclick="promptDelete('${currentTab}', ${item.originalIndex})">
-              <span>✕</span>
-              <span>Hapus</span>
-            </button>
+            <div class="entry-actions">
+              <button class="btn-delete" onclick="promptEntry(${item.originalIndex})"><span>Edit</span></button>
+              <button class="btn-delete" onclick="promptDelete('${currentTab}', ${item.originalIndex})">
+                <span>✕</span>
+                <span>Hapus</span>
+              </button>
+            </div>
           </div>
           <div class="entry-text">${formatText(item.text)}</div>
         </div>
