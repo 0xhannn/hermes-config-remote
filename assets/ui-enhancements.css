@@ -152,12 +152,17 @@ body { margin: 0; padding: 0 !important; }
   align-items: center;
   gap: 8px;
   padding: 0 8px;
-  height: 44px;
+  min-height: 44px;
+  height: auto;
   font-weight: 600;
   letter-spacing: -0.02em;
   color: #1C1917;
 }
 .sidebar-brand img { display: block; border-radius: 8px; }
+.brand-copy { display: flex; flex-direction: column; gap: 2px; line-height: 1.15; }
+.brand-copy strong { font-size: 14px; font-weight: 600; color: #1C1917; }
+.brand-copy small { font-size: 12px; font-weight: 500; color: #78716C; }
+
 .sidebar-nav { display: flex; flex-direction: column; gap: 4px; }
 .nav-link {
   display: flex;
