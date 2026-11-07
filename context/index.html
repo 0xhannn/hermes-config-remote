@@ -705,7 +705,7 @@
       }
       try {
         const res = await fetch('/api/memory/data', {
-          headers: { 'X-Memory-Auth': authKey }
+          headers: { 'X-Hermes-PIN': authKey }
         });
         if (res.status === 401) {
           localStorage.removeItem('hermes_pin');
@@ -854,7 +854,7 @@
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'X-Memory-Auth': authKey
+            'X-Hermes-PIN': authKey
           },
           body: json_stringify = JSON.stringify({
             target: pendingDeleteTarget,

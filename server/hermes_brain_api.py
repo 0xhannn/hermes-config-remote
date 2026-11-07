@@ -174,6 +174,32 @@ def set_current_pin(new_pin):
     with open(PIN_FILE, "w", encoding="utf-8") as f:
         f.write(new_pin.strip())
 
+
+def _memory_path(target):
+    name = {"memory": "MEMORY.md", "user": "USER.md"}.get(target)
+    if not name:
+        return None
+    return os.path.join(_hermes_config_dir(), "memories", name)
+
+def _read_memory_entries(target):
+    path = _memory_path(target)
+    if not path or not os.path.isfile(path):
+        return []
+    with open(path, "r", encoding="utf-8") as f:
+        raw = f.read()
+    return [p.strip() for p in raw.split("\u00a7") if p.strip()]
+
+def _write_memory_entries(target, entries):
+    path = _memory_path(target)
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    text = "\n\u00a7\n".join(entries)
+    if text:
+        text += "\n"
+    tmp = path + ".tmp"
+    with open(tmp, "w", encoding="utf-8", newline="\n") as f:
+        f.write(text)
+    os.replace(tmp, path)
+
 def load_yaml():
     if not os.path.exists(CONFIG_PATH):
         return {}
@@ -349,7 +375,7 @@ class HermesBrainHandler(http.server.BaseHTTPRequestHandler):
     def _send_cors(self):
         self.send_header("Access-Control-Allow-Origin", "*")
         self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type, X-Hermes-PIN, X-Hermes-Key")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type, X-Hermes-PIN, X-Hermes-Key, X-Memory-Auth")
 
     def do_OPTIONS(self):
         self.send_response(204)
@@ -358,7 +384,7 @@ class HermesBrainHandler(http.server.BaseHTTPRequestHandler):
 
     def _check_auth(self):
         current_pin = get_current_pin()
-        pin_hdr = self.headers.get("X-Hermes-PIN") or self.headers.get("X-Hermes-Key")
+        pin_hdr = self.headers.get("X-Hermes-PIN") or self.headers.get("X-Hermes-Key") or self.headers.get("X-Memory-Auth")
         if pin_hdr == current_pin:
             return True
         # cookie session fallback (persist lintas halaman tanpa localStorage)
@@ -705,6 +731,13 @@ class HermesBrainHandler(http.server.BaseHTTPRequestHandler):
             except Exception as e:
                 return self._send_json(500, {"success": False, "error": str(e)})
 
+        if path == "/api/memory/data":
+            return self._send_json(200, {
+                "success": True,
+                "memory": _read_memory_entries("memory"),
+                "user": _read_memory_entries("user"),
+            })
+
         return self._send_json(404, {"success": False, "error": "Endpoint not found"})
 
     def do_POST(self):
@@ -1030,6 +1063,18 @@ class HermesBrainHandler(http.server.BaseHTTPRequestHandler):
                 return self._send_json(200, {"success": True, "message": "Backup berhasil diimpor ke ~/.hermes"})
             except Exception as e:
                 return self._send_json(500, {"success": False, "error": f"Gagal restore backup: {str(e)}"})
+
+        if path == "/api/memory/delete":
+            target = body.get("target")
+            index = body.get("index")
+            if target not in ("memory", "user") or type(index) is not int or index < 0:
+                return self._send_json(400, {"success": False, "error": "target atau index tidak valid"})
+            entries = _read_memory_entries(target)
+            if index >= len(entries):
+                return self._send_json(404, {"success": False, "error": "Entri tidak ada"})
+            del entries[index]
+            _write_memory_entries(target, entries)
+            return self._send_json(200, {"success": True})
 
         return self._send_json(404, {"success": False, "error": "Endpoint not found"})
 
