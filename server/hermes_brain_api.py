@@ -922,35 +922,25 @@ class HermesBrainHandler(http.server.BaseHTTPRequestHandler):
 
         if path == "/api/hermes/system/update/check":
             try:
-                import subprocess
-                local_sha = subprocess.check_output(
-                    ["git", "-C", HERMES_WEB_DIR, "rev-parse", "HEAD"],
-                    stderr=subprocess.STDOUT
-                ).decode("utf-8").strip()
-                
-                remote_out = subprocess.check_output(
-                    ["git", "-C", HERMES_WEB_DIR, "ls-remote", "origin", f"refs/heads/{HERMES_REPO_BRANCH}"],
-                    stderr=subprocess.STDOUT, timeout=10
-                ).decode("utf-8").strip()
-                remote_sha = remote_out.split()[0] if remote_out else local_sha
-
-                has_update = (local_sha != remote_sha)
-                
-                log_out = subprocess.check_output(
-                    ["git", "-C", HERMES_WEB_DIR, "log", "-1", "--format=%h - %s (%cr)"],
-                    stderr=subprocess.STDOUT
-                ).decode("utf-8").strip()
-
+                import json as _json
+                import urllib.request
+                pkg_path = os.path.join(HERMES_WEB_DIR, "package.json")
+                with open(pkg_path, "r", encoding="utf-8") as f:
+                    local_version = _json.load(f).get("version", "")
+                req = urllib.request.Request(
+                    "https://registry.npmjs.org/hermes-remote/latest",
+                    headers={"Accept": "application/json"}
+                )
+                with urllib.request.urlopen(req, timeout=8) as resp:
+                    latest_version = _json.loads(resp.read().decode("utf-8")).get("version", "")
                 return self._send_json(200, {
                     "success": True,
-                    "local_sha": local_sha[:7],
-                    "remote_sha": remote_sha[:7],
-                    "has_update": has_update,
-                    "last_commit": log_out
+                    "local_version": local_version,
+                    "latest_version": latest_version,
+                    "has_update": bool(latest_version) and latest_version != local_version
                 })
             except Exception as e:
                 return self._send_json(500, {"success": False, "error": str(e)})
-
         if path == "/api/hermes/system/update/apply":
             try:
                 import subprocess
