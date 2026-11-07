@@ -456,6 +456,21 @@
 
   <div class="toast" id="toast">Notifikasi</div>
 
+  <div id="noticeModal" class="modal-overlay" style="display:none; z-index:1100;">
+    <div class="modal-card">
+      <div class="modal-header"><h3 id="noticeTitle">Perhatian</h3></div>
+      <div class="modal-body"><p id="noticeMessage" style="font-size:14px; line-height:1.5; margin:0;"></p></div>
+      <div class="modal-footer"><button class="btn" type="button" onclick="closeNotice(false)">Oke</button></div>
+    </div>
+  </div>
+  <div id="confirmModal" class="modal-overlay" style="display:none; z-index:1100;">
+    <div class="modal-card">
+      <div class="modal-header"><h3 id="confirmTitle">Konfirmasi</h3></div>
+      <div class="modal-body"><p id="confirmMessage" style="font-size:14px; line-height:1.5; margin:0;"></p></div>
+      <div class="modal-footer"><button class="btn btn-danger" type="button" onclick="acceptConfirm()">Hapus</button></div>
+    </div>
+  </div>
+
   <script>
     let AUTH_PIN = localStorage.getItem('hermes_pin') || '';
     let ALL_SKILLS = [];
@@ -469,8 +484,61 @@
       modal.style.display = 'flex';
     }
     function dismissSkillModal() { closeSkillModal(); }
+    let noticeHistoryOpen = false;
+    let confirmHistoryOpen = false;
+    let confirmResolver = null;
+    let modalSkipPop = 0;
+    function showNotice(message, title) {
+      document.getElementById('noticeTitle').textContent = title || 'Perhatian';
+      document.getElementById('noticeMessage').textContent = message;
+      if (!noticeHistoryOpen) {
+        history.pushState({ hermesModal: 'notice' }, '', location.href);
+        noticeHistoryOpen = true;
+      }
+      document.getElementById('noticeModal').style.display = 'flex';
+    }
+    function closeNotice(fromBack) {
+      if (!noticeHistoryOpen) return;
+      noticeHistoryOpen = false;
+      document.getElementById('noticeModal').style.display = 'none';
+      if (!fromBack) { modalSkipPop++; history.back(); }
+    }
+    function showConfirm(message, title) {
+      return new Promise(function (resolve) {
+        confirmResolver = resolve;
+        document.getElementById('confirmTitle').textContent = title || 'Konfirmasi';
+        document.getElementById('confirmMessage').textContent = message;
+        if (!confirmHistoryOpen) {
+          history.pushState({ hermesModal: 'confirm' }, '', location.href);
+          confirmHistoryOpen = true;
+        }
+        document.getElementById('confirmModal').style.display = 'flex';
+      });
+    }
+    function acceptConfirm() {
+      var res = confirmResolver;
+      confirmResolver = null;
+      if (!confirmHistoryOpen) { if (res) res(true); return; }
+      confirmHistoryOpen = false;
+      document.getElementById('confirmModal').style.display = 'none';
+      modalSkipPop++;
+      history.back();
+      if (res) res(true);
+    }
+    function closeConfirm(fromBack) {
+      if (!confirmHistoryOpen) return;
+      confirmHistoryOpen = false;
+      document.getElementById('confirmModal').style.display = 'none';
+      var res = confirmResolver;
+      confirmResolver = null;
+      if (res) res(false);
+      if (!fromBack) { modalSkipPop++; history.back(); }
+    }
     window.addEventListener('popstate', () => {
-      if (skillModalHistoryOpen) {
+      if (modalSkipPop) { modalSkipPop--; return; }
+      if (noticeHistoryOpen) closeNotice(true);
+      else if (confirmHistoryOpen) closeConfirm(true);
+      else if (skillModalHistoryOpen) {
         skillModalHistoryOpen = false;
         document.getElementById('skillModal').style.display = 'none';
       }
@@ -492,7 +560,7 @@
 
     async function handleAuth() {
       const pin = document.getElementById('pinInput').value.trim();
-      if (!pin) return alert('PIN tidak boleh kosong');
+      if (!pin) return showNotice('PIN tidak boleh kosong');
       try {
         const res = await fetch('/api/hermes/auth', {
           method: 'POST',
@@ -505,10 +573,10 @@
           localStorage.setItem('hermes_pin', pin);
           initDashboard();
         } else {
-          alert('PIN salah!');
+          showNotice('PIN salah!');
         }
       } catch (e) {
-        alert('Gagal terhubung ke server');
+        showNotice('Gagal terhubung ke server');
       }
     }
 
@@ -528,7 +596,7 @@
           ALL_SKILLS = data.skills || [];
           renderSkills(ALL_SKILLS);
         } else {
-          alert(data.error || 'Gagal memuat skills');
+          showNotice(data.error || 'Gagal memuat skills');
         }
       } catch (e) {
         showToast('Error fetch skills');
@@ -620,8 +688,8 @@
       const category = document.getElementById('modalSkillCategory').value.trim();
       const content = document.getElementById('modalSkillContent').value;
 
-      if (!name) return alert('Nama skill wajib diisi');
-      if (!content) return alert('Konten skill tidak boleh kosong');
+      if (!name) return showNotice('Nama skill wajib diisi');
+      if (!content) return showNotice('Konten skill tidak boleh kosong');
 
       try {
         const res = await fetch('/api/hermes/skills/save', {
@@ -643,15 +711,16 @@
           closeModal();
           await loadSkills();
         } else {
-          alert(data.error || 'Gagal menyimpan skill');
+          showNotice(data.error || 'Gagal menyimpan skill');
         }
       } catch (e) {
-        alert('Gagal mengirim request');
+        showNotice('Gagal mengirim request');
       }
     }
 
     async function deleteSkill(skillName) {
-      if (!confirm(`Yakin ingin menghapus skill '${skillName}'? Tindakan ini permanen.`)) return;
+      const ok = await showConfirm("Hapus skill '" + skillName + "'? Tindakan ini permanen.", 'Hapus Skill');
+      if (!ok) return;
       try {
         const res = await fetch('/api/hermes/skills/delete', {
           method: 'POST',
@@ -666,10 +735,10 @@
           showToast(`Skill '${skillName}' berhasil dihapus`);
           await loadSkills();
         } else {
-          alert(data.error || 'Gagal menghapus skill');
+          showNotice(data.error || 'Gagal menghapus skill');
         }
       } catch (e) {
-        alert('Gagal mengirim request delete');
+        showNotice('Gagal mengirim request delete');
       }
     }
 

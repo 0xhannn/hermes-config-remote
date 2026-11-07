@@ -635,6 +635,17 @@
     </div>
   </div>
 
+
+  <div id="notice-modal" class="modal-overlay" style="display:none;">
+    <div class="modal-card">
+      <div class="modal-title" id="notice-title">Perhatian</div>
+      <p id="notice-message" class="modal-desc"></p>
+      <div class="modal-actions">
+        <button class="btn-confirm-delete" style="background:var(--blue-dev); border-color:var(--blue-dev);" onclick="closeNotice()">Oke</button>
+      </div>
+    </div>
+  </div>
+
   <div class="toast" id="toast-msg">Notifikasi</div>
 
   <script>
@@ -684,6 +695,16 @@
         if (t.includes("dilarang keras") || t.includes("aturan mutlak")) return "OPERATIONAL RULE";
         return "SYSTEM NOTE";
       }
+    }
+
+
+    function showNotice(message, title) {
+      document.getElementById('notice-title').textContent = title || 'Perhatian';
+      document.getElementById('notice-message').textContent = message;
+      showModal('notice-modal');
+    }
+    function closeNotice() {
+      dismissTopModal();
     }
 
     function showToast(msg) {
@@ -881,10 +902,10 @@
           closeModal();
           await loadData();
         } else {
-          alert('Gagal menghapus: ' + (data.error || 'Unknown error'));
+          showNotice('Gagal menghapus: ' + (data.error || 'Unknown error'));
         }
       } catch (err) {
-        alert('Error koneksi ke API server: ' + err.message);
+        showNotice('Error koneksi ke API server: ' + err.message);
       } finally {
         btn.textContent = 'Hapus Permanen';
         btn.disabled = false;
@@ -923,10 +944,10 @@
           closeEntry();
           await loadData();
         } else {
-          alert('Gagal simpan: ' + (data.error || 'Unknown error'));
+          showNotice('Gagal simpan: ' + (data.error || 'Unknown error'));
         }
       } catch (err) {
-        alert('Error koneksi ke API server: ' + err.message);
+        showNotice('Error koneksi ke API server: ' + err.message);
       } finally {
         btn.disabled = false;
       }

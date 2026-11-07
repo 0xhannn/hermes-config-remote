@@ -396,7 +396,7 @@
 
     async function handleAuth() {
       const pin = document.getElementById('pinInput').value.trim();
-      if (!pin) return alert('Masukkan PIN');
+      if (!pin) return showNotice('Masukkan PIN');
 
       try {
         const res = await fetch('/api/hermes/auth', {
@@ -412,10 +412,10 @@
           document.getElementById('dashboardView').style.display = 'block';
           loadDashboard();
         } else {
-          alert('PIN salah: ' + (data.error || 'Akses ditolak'));
+          showNotice('PIN salah: ' + (data.error || 'Akses ditolak'));
         }
       } catch (e) {
-        alert('Gagal panggil API: ' + e.message);
+        showNotice('Gagal panggil API: ' + e.message);
       }
     }
 
@@ -489,11 +489,12 @@
     let confirmModalHistoryOpen = false;
     let confirmResolver = null;
 
-    function showConfirm(message, title = 'Konfirmasi') {
+    function showConfirm(message, title = 'Konfirmasi', okOnly = false) {
       return new Promise(resolve => {
         confirmResolver = resolve;
         document.getElementById('confirmModalTitle').textContent = title;
         document.getElementById('confirmModalMessage').textContent = message;
+        document.getElementById('confirmModalCancelBtn').style.display = okOnly ? 'none' : '';
         const modal = document.getElementById('confirmModal');
         if (!confirmModalHistoryOpen) {
           history.pushState({ hermesModal: 'confirm' }, '', location.href);
@@ -501,6 +502,9 @@
         }
         modal.style.display = 'flex';
       });
+    }
+    function showNotice(message, title = 'Perhatian') {
+      return showConfirm(message, title, true);
     }
 
     function resolveConfirmModal(value) {
@@ -514,6 +518,7 @@
       if (!confirmModalHistoryOpen) return;
       confirmModalHistoryOpen = false;
       document.getElementById('confirmModal').style.display = 'none';
+      document.getElementById('confirmModalCancelBtn').style.display = '';
       if (!fromBack) history.back();
       if (confirmResolver) {
         const res = confirmResolver;
@@ -585,7 +590,7 @@
 
     async function applyQuickSwitch() {
       const targetModel = document.getElementById('quickCustomInput').value.trim();
-      if (!targetModel) return alert('Pilih atau ketik model yang ingin diaktifkan');
+      if (!targetModel) return showNotice('Pilih atau ketik model yang ingin diaktifkan');
       await switchModel('custom', targetModel);
     }
 
@@ -600,10 +605,10 @@
           showToast(res.message);
           loadDashboard();
         } else {
-          alert('Gagal: ' + res.error);
+          showNotice('Gagal: ' + res.error);
         }
       } catch (e) {
-        alert('Error: ' + e.message);
+        showNotice('Error: ' + e.message);
       }
     }
 
@@ -662,7 +667,7 @@
       const apiKey = document.getElementById('modalApiKey').value.trim();
 
       if (!name || !baseUrl || !model) {
-        return alert('Nama, Base URL, dan Default Model wajib diisi');
+        return showNotice('Nama, Base URL, dan Default Model wajib diisi');
       }
 
       try {
@@ -689,10 +694,10 @@
           closeModal();
           loadDashboard();
         } else {
-          alert('Gagal: ' + res.error);
+          showNotice('Gagal: ' + res.error);
         }
       } catch (e) {
-        alert('Error: ' + e.message);
+        showNotice('Error: ' + e.message);
       }
     }
 
@@ -705,10 +710,10 @@
           showToast(res.message);
           loadDashboard();
         } else {
-          alert('Gagal: ' + res.error);
+          showNotice('Gagal: ' + res.error);
         }
       } catch (e) {
-        alert('Error: ' + e.message);
+        showNotice('Error: ' + e.message);
       }
     }
 
