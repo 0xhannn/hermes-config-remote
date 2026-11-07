@@ -437,6 +437,7 @@
       gap: 10px;
     }
     @media (max-width: 767px) {
+      .modal-actions { justify-content: flex-start; }
       .modal-actions .btn-cancel { display: none; }
     }
 
@@ -618,8 +619,8 @@
         <textarea id="entry-input" class="search-box" style="width:100%; min-height:140px; font-size:14px; padding:10px 14px; resize:vertical;" placeholder="masukkan entri"></textarea>
       </div>
       <div class="modal-actions">
-        <button class="btn-cancel" onclick="closeEntry()">Batal</button>
         <button class="btn-confirm-delete" id="btn-entry-save" style="background:var(--blue-dev); border-color:var(--blue-dev);" onclick="saveEntry()">Simpan</button>
+        <button class="btn-cancel" onclick="closeEntry()">Batal</button>
       </div>
     </div>
   </div>
