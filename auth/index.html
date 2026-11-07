@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="id">
 <head>
   <meta charset="UTF-8">
@@ -163,9 +163,27 @@
   <link rel="stylesheet" href="/assets/ui-enhancements.css?v=3">
 </head>
 <body>
+<div class="app-shell">
+<!-- hermes-sidebar --><aside class="sidebar" id="hermes-sidebar">
+  <div class="sidebar-brand">
+    <img src="/assets/hermes-icon.svg" alt="" width="28" height="28">
+    <span>Hermes</span>
+  </div>
+  <nav class="sidebar-nav" aria-label="Utama">
+    <a class="nav-link" href="/"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span>Dashboard</span></a>
+    <a class="nav-link" href="/brain/"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4a3 3 0 0 0-3 3v1a3 3 0 0 0-2 2.8V14a3 3 0 0 0 2.2 2.9A3 3 0 0 0 9 20h1V4H9z"/><path d="M15 4a3 3 0 0 1 3 3v1a3 3 0 0 1 2 2.8V14a3 3 0 0 1-2.2 2.9A3 3 0 0 1 15 20h-1V4h1z"/><path d="M12 4v16"/></svg><span>Brain</span></a>
+    <a class="nav-link" href="/context/"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4h9l3 3v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z"/><path d="M15 4v4h4"/><path d="M8 12h8M8 16h5"/></svg><span>Context</span></a>
+    <a class="nav-link" href="/skills/"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 3.5 16 6l2.5.4-1.8 1.8.4 2.5L14.5 9.6 12 10.7l-.4-2.5L9.8 6.4 12.3 6z"/><path d="M4 14h6v6H4z"/><path d="M14 15h6M14 19h4M12 4v2"/></svg><span>Skills</span></a>
+    <a class="nav-link" href="/settings/"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 3v2.2M12 18.8V21M3 12h2.2M18.8 12H21M5.6 5.6l1.6 1.6M16.8 16.8l1.6 1.6M18.4 5.6l-1.6 1.6M7.2 16.8l-1.6 1.6"/></svg><span>Settings</span></a>
+  </nav>
+  <div class="sidebar-foot">
+    <span class="status-pill"><i></i>Live</span>
+  </div>
+</aside>
+
   <div class="auth-card">
     <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 12px;">
-      <img src="/assets/hermes-icon.svg" alt="Hermes" style="width: 24px; height: 24px; border-radius: 6px;">
+      
       <div class="logo-badge" style="margin-bottom: 0;">⚡ HERMES GATEWAY</div>
     </div>
     <div style="font-size: 40px; margin-bottom: 12px;">🔒</div>
@@ -245,5 +263,7 @@
     };
   </script>
   <script src="/assets/ui-enhancements.js?v=2"></script>
+</div>
+<script src="/assets/sidebar.js"></script>
 </body>
 </html>
