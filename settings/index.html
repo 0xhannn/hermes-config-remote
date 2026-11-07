@@ -53,27 +53,16 @@
       color: var(--text-main);
       font-family: var(--font-sans);
       min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
       padding: 0;
       line-height: 1.5;
     }
     .container {
       width: 100%;
-      max-width: 1400px;
-      display: flex;
-      flex-direction: column;
-      gap: 24px;
+      max-width: 100%;
     }
     header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding-bottom: 16px;
-      border-bottom: 1px solid var(--card-border);
-      flex-wrap: wrap;
-      gap: 16px;
+      display: block;
+      margin-bottom: 32px;
     }
     .brand-row {
       display: flex;
@@ -115,16 +104,16 @@
       box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
     }
     h1 {
-      font-size: 26px;
+      font-size: 28px;
       font-weight: 800;
       letter-spacing: -0.5px;
+      color: var(--text-main);
       margin-top: 6px;
     }
     .subtitle {
       color: var(--text-muted);
       font-size: 14px;
       margin-top: 4px;
-      margin-bottom: 20px;
     }
     .header-actions {
       display: flex;
@@ -277,14 +266,14 @@
       display: none;
     }
     @media (max-width: 767px) {
-      body { padding: 14px 16px; }
+      body { padding: 0; }
       .card { padding: 14px 16px; border-radius: 12px; }
       .btn { min-height: 44px; }
       .modal-backdrop { padding: 12px; }
       .modal-box { max-width: calc(100% - 24px); }
     }
   </style>
-  <link rel="stylesheet" href="/assets/ui-enhancements.css?v=7">
+  <link rel="stylesheet" href="/assets/ui-enhancements.css?v=8">
 </head>
 <body>
 <div class="app-shell">
@@ -312,10 +301,7 @@
   <div class="container">
     <header>
       <div class="brand-row">
-        <div class="page-mark">
-          <a class="back-link" href="/">Kembali</a>
-          <span class="logo-badge">Hermes Remote</span>
-        </div>
+        <div class="page-mark"></div>
         <div class="status-pill"><span class="status-dot"></span> SYSTEM &amp; DATA</div>
       </div>
       <h1>Settings</h1>
