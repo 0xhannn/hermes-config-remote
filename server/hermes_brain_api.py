@@ -30,13 +30,13 @@ import urllib.request
 import subprocess
 import time
 
-HEALTH_SERVICES = ("hermes-brain-api.service", "hermes-gateway.service", "nginx.service", "cloudflared.service")
+HEALTH_SERVICES = ("hermes-brain-api.service", "hermes-gateway.service")
 
 
 def _win32_services():
     """Windows service/process status via PowerShell (no systemctl)."""
     services = []
-    procs = {"hermes-gateway.service": "node", "nginx.service": "nginx.exe", "cloudflared.service": "cloudflared.exe"}
+    procs = {"hermes-gateway.service": "node"}
     try:
         raw = subprocess.check_output(
             ["powershell", "-NoProfile", "-Command", "Get-Process | Select-Object -ExpandProperty ProcessName"],
@@ -79,18 +79,8 @@ def _win32_resources():
                 "percent": round(disk.used / disk.total * 100, 1) if disk.total else 0}
     except Exception:
         disk = {"free_bytes": 0, "total_bytes": 0, "percent": 0}
-    cpu_percent, load, uptime_seconds = None, [], 0
-    try:
-        cpu = subprocess.check_output(
-            ["powershell", "-NoProfile", "-Command",
-             "Get-Counter '\\Processor(_Total)\\% Processor Time' -SampleInterval 1 -MaxSamples 2 | Select-Object -ExpandProperty CounterSamples | Select-Object -Last 1 -ExpandProperty CookedValue"],
-            text=True, timeout=8,
-        )
-        cpu_percent = round(float(cpu.strip().splitlines()[-1].strip()), 1)
-    except Exception:
-        cpu_percent = None
-    return {"cpu_percent": cpu_percent, "load_average": load, "memory": memory,
-            "disk": disk, "uptime_seconds": uptime_seconds}
+    return {"cpu_percent": None, "load_average": [], "memory": memory,
+            "disk": disk, "uptime_seconds": 0}
 
 
 def get_system_health():

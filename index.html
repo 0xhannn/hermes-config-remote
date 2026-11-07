@@ -362,7 +362,7 @@
     <div class="arch-card">
       <div class="arch-title">Core Architecture Overview</div>
       <div class="tree-box">
-        <div class="tree-item"><span class="tree-folder">📁 localhost:8094</span> <span class="tree-desc">— Root Dashboard Portal (standalone)</span></div>
+        <div class="tree-item"><span class="tree-folder">📁 localhost:8093</span> <span class="tree-desc">— Root Dashboard Portal (standalone)</span></div>
         <div class="tree-item" style="padding-left: 20px;"><span class="tree-folder">├── 🧠 /brain</span> <span class="tree-desc">— Setting &amp; Switch Model / Providers (CLI Core 1:1)</span></div>
         <div class="tree-item" style="padding-left: 20px;"><span class="tree-folder">├── 📚 /context</span> <span class="tree-desc">— Profil Master (USER.md) &amp; Persistent Memory (MEMORY.md)</span></div>
         <div class="tree-item" style="padding-left: 20px;"><span class="tree-folder">├── ⚡ /skills</span> <span class="tree-desc">— Audit, Edit, Tambah &amp; Hapus Kemampuan Teknis (SKILL.md)</span></div>
@@ -371,7 +371,7 @@
     </div>
 
     <footer>
-      localhost:8094 &bull; Hermes Control Center &bull; Agent Gateway
+      localhost:8093 &bull; Hermes Control Center &bull; Agent Gateway
     </footer>
   </div>
 
@@ -391,7 +391,6 @@
         while (value >= 1024 && unit < units.length - 1) { value /= 1024; unit++; }
         return `${value.toFixed(1)} ${units[unit]}`;
       };
-      const formatUptime = seconds => `${Math.floor(seconds / 86400)}d ${Math.floor(seconds % 86400 / 3600)}h ${Math.floor(seconds % 3600 / 60)}m`;
       const metric = (label, value, percent = null) => `<div class="health-metric"><div class="health-metric-label">${label}</div><div class="health-metric-value">${value}</div>${percent === null ? '' : `<div class="health-bar"><span style="width:${Math.min(100, Math.max(0, percent))}%"></span></div>`}</div>`;
       async function refreshHealth() {
         refreshHealthBtn.disabled = true;
@@ -409,7 +408,7 @@
             return `<div class="health-item"><div class="health-item-head"><span>${service.unit}</span><span class="health-state ${active ? 'ok' : ''}">${active ? 'ACTIVE' : service.active.toUpperCase()}</span></div><div class="health-meta">PID ${service.pid || '—'} · Restart ${service.restarts}x</div></div>`;
           }).join('');
           const r = data.resources;
-          healthMetrics.innerHTML = metric('CPU', `${r.cpu_percent ?? 'N/A'}%`, r.cpu_percent) + metric('RAM available / total', `${r.memory.available_mb} / ${r.memory.total_mb} MB · ${r.memory.percent}% used`, r.memory.percent) + metric('Disk free / total', `${formatBytes(r.disk.free_bytes)} / ${formatBytes(r.disk.total_bytes)}`) + metric('Load average (1/5/15m)', (r.load_average || []).join(' / ') || 'N/A') + metric('Uptime', formatUptime(r.uptime_seconds));
+          healthMetrics.innerHTML = metric('RAM available / total', `${r.memory.available_mb} / ${r.memory.total_mb} MB · ${r.memory.percent}% used`, r.memory.percent) + metric('Disk free / total', `${formatBytes(r.disk.free_bytes)} / ${formatBytes(r.disk.total_bytes)}`);
           healthUpdatedAt.textContent = `Diperbarui ${new Date(data.timestamp).toLocaleTimeString()}`;
         } catch (err) {
           healthUpdatedAt.textContent = `Health gagal dimuat: ${err.message}`;
