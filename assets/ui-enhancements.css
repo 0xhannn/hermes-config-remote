@@ -218,6 +218,10 @@ body { margin: 0; padding: 0 !important; }
   box-sizing: border-box;
 }
 .main-content > .container { padding-bottom: 8px; }
+.page-mark { display: flex; align-items: center; gap: 8px; min-height: 44px; }
+.back-link { color: #44403C; font-size: 13px; font-weight: 500; text-decoration: none; }
+.back-link:hover { color: #2563EB; }
+.main-content header h1 { font-size: 28px; font-weight: 700; letter-spacing: -0.02em; color: #1C1917; margin: 8px 0 0; }
 .main-content footer { margin-bottom: 8px; }
 @media (max-width: 767px) {
   .app-shell { flex-direction: column; }
